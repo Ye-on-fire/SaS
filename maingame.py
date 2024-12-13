@@ -2,11 +2,15 @@ import pygame
 import sys
 import math
 
-screen = pygame.display.set_mode((1280, 720))
+sc_width,sc_height = 1280,720
+screen = pygame.display.set_mode((sc_width,sc_height))
 clock = pygame.time.Clock()
-playerpos = pygame.Vector2(1280//2,720//2)
+playerpos = pygame.Vector2(sc_width//2,sc_height//2)
 mousepos = (0,0)
-move_not_completed = False
+
+ch_image = pygame.image.load('./ch.jpg')
+bg = pygame.image.load('./bg.jpg')
+# move_not_completed = False
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -25,9 +29,7 @@ while True:
     #     if abs(playerpos.x-mousepos[0])<=1.5 and abs(playerpos.y-mousepos[1]) <= 1.5:
     #         move_not_completed = False
     
-    screen.fill('blue')
-    pygame.draw.circle(screen, 'red', playerpos, 40.0)
-    
+    screen.blit(bg,(0,0))
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         playerpos.y -= 300 * deltatime
@@ -40,7 +42,7 @@ while True:
     if keys[pygame.K_ESCAPE]:
         pygame.quit()
         sys.exit()
-    
+    screen.blit(ch_image,playerpos)
 
 
     pygame.display.flip()
