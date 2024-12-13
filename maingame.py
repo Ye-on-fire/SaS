@@ -2,13 +2,13 @@ import pygame
 import sys
 import math
 #你好hello
-sc_width,sc_height = 1280,720
+sc_width,sc_height = 800,600
 screen = pygame.display.set_mode((sc_width,sc_height))
 clock = pygame.time.Clock()
 playerpos = pygame.Vector2(sc_width//2,sc_height//2)
 mousepos = (0,0)
 
-ch_image = pygame.image.load('./ch.jpg')
+ch_image = pygame.image.load('./ch.png')
 bg = pygame.image.load('./bg.jpg')
 # move_not_completed = False
 while True:
