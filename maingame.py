@@ -1,7 +1,7 @@
 import pygame
 import sys
 import math
-#你好
+#你好hello
 sc_width,sc_height = 1280,720
 screen = pygame.display.set_mode((sc_width,sc_height))
 clock = pygame.time.Clock()
