@@ -1,15 +1,17 @@
 import pygame
 import sys
 import math
-#你好hello
-sc_width,sc_height = 800,600
-screen = pygame.display.set_mode((sc_width,sc_height))
-clock = pygame.time.Clock()
-playerpos = pygame.Vector2(sc_width//2,sc_height//2)
-mousepos = (0,0)
 
-ch_image = pygame.image.load('./ch.png')
-bg = pygame.image.load('./bg.jpg')
+# 你好hello
+sc_width, sc_height = 800, 600
+screen = pygame.display.set_mode((sc_width, sc_height))
+clock = pygame.time.Clock()
+playerpos = pygame.Vector2(sc_width // 2, sc_height // 2)
+mousepos = (0, 0)
+
+deltatime = 0
+ch_image = pygame.image.load("./ch.png")
+bg = pygame.image.load("./bg.jpg")
 # move_not_completed = False
 while True:
     for event in pygame.event.get():
@@ -28,8 +30,8 @@ while True:
     #     playerpos.y += v_y*deltatime
     #     if abs(playerpos.x-mousepos[0])<=1.5 and abs(playerpos.y-mousepos[1]) <= 1.5:
     #         move_not_completed = False
-    
-    screen.blit(bg,(0,0))
+
+    screen.blit(bg, (0, 0))
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         playerpos.y -= 300 * deltatime
@@ -42,8 +44,7 @@ while True:
     if keys[pygame.K_ESCAPE]:
         pygame.quit()
         sys.exit()
-    screen.blit(ch_image,playerpos)
-
+    screen.blit(ch_image, playerpos)
 
     pygame.display.flip()
 
