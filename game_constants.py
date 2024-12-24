@@ -39,6 +39,10 @@ class SceneEventCode(_IntEnum):
     RESTART = get_unused_event_code()
 
 
+class StateEventCode(_IntEnum):
+    CHANGE_STATE = get_unused_event_code()
+
+
 # event body | 事件内容模板
 class MoveAttemptBody(_typing.TypedDict):
     sender: str
