@@ -40,6 +40,23 @@ class Mob(AnimatedSprite):
         imageset = generate_imageset("./assets/player/")
         image = imageset["idle"][0][0]
         super().__init__(image=image, imageset=imageset)
+        self.rect.center = (500, 500)
+
+    @listening(c.TempTestCode.MOVE)
+    def move(self, event):
+        state = State("run", duration=5)
+        self.change_state(state)
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_a]:
+            self.faceing = 1
+            self.rect.x -= 5
+        if keys[pygame.K_d]:
+            self.faceing = 0
+            self.rect.x += 5
+        if keys[pygame.K_w]:
+            self.rect.y -= 5
+        if keys[pygame.K_s]:
+            self.rect.y += 5
 
 
 if __name__ == "__main__":
@@ -57,6 +74,22 @@ if __name__ == "__main__":
 
     while True:
         co.window.fill((0, 0, 0))  # 全屏涂黑
+        ckeys = pygame.key.get_pressed()
+        if (
+            ckeys[pygame.K_a]
+            or ckeys[pygame.K_w]
+            or ckeys[pygame.K_d]
+            or ckeys[pygame.K_s]
+        ):
+            e = EventLike(c.TempTestCode.MOVE, prior=100, body={})
+            co.add_event(e)
+        else:
+            e = EventLike(
+                c.StateEventCode.CHANGE_STATE,
+                prior=100,
+                body={"state": State.create_idle()},
+            )
+            co.add_event(e)
         co.add_event(EventLike.step_event(secord=0))
         for event in co.yield_events():
             group.listen(event)  # 听取: 核心事件队列
