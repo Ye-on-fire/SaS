@@ -22,6 +22,21 @@ def generate_imageset(path):
     return imageset
 
 
+def generate_imageset_for_mac(path):
+    imageset = {}
+    for i in os.listdir(path):
+        if i != ".DS_Store":
+            temp = [[], []]
+            for j in os.listdir(os.path.join(path, i)):
+                if j != ".DS_Store":
+                    image = pygame.image.load(os.path.join(path, i, j))
+                    image_left = pygame.transform.flip(image, 1, 0)
+                    temp[0].append(image)
+                    temp[1].append(image_left)
+                imageset[i] = temp
+    return imageset
+
+
 class State:
     """
     State类
@@ -31,6 +46,7 @@ class State:
     is_loop：关于这个动画是循环的还是只播放一次
     duration:动画两帧之间需要间隔几帧
     info:各种杂七杂八的东西，比如记录每一帧角色的状态
+        frame_type:0 normal 1 attack 2 invincible 3
     """
 
     def __init__(
@@ -45,6 +61,15 @@ class State:
     @classmethod
     def create_idle(self):
         return self("idle", duration=5)
+
+    @classmethod
+    def create_run(self):
+        return self("run", duration=5)
+
+    @classmethod
+    def create_attack(self):
+        info = {"frame_type": [0, 0, 1, 0, 0, 0]}
+        return self("attack", change_flag=False, loop_flag=False, duration=5, info=info)
 
     def __eq__(self, other):
         return self.name == other.name
@@ -69,21 +94,22 @@ class AnimatedSprite(EntityLike):
         image: pygame.Surface,
         state: State = State.create_idle(),
         direction=0,
+        postapi=None,
     ):
         # direction:1左，0为右
         #
         # state记录当前动画的状态并改变动画
         self.image = image
         rect = image.get_rect()
-        super().__init__(rect=rect)
+        super().__init__(rect=rect, post_api=postapi)
         # 动画相关
         self.__imageset = imageset
         self.__current_state = state
         self.__direction = direction
         self.__current_anim = self.__imageset[self.__current_state.name]
-        self.__frame = -1
-        self.__frame_duration_count = -1
-        self.__anim_loop_count = -1
+        self.__frame = 0
+        self.__frame_duration_count = 0
+        self.__anim_loop_count = 0
 
     @property
     def faceing(self):
@@ -108,32 +134,33 @@ class AnimatedSprite(EntityLike):
     def change_state(self, new_state):
         if self.__current_state.can_be_changed and self.state != new_state:
             self.state = new_state
-            self.__frame = -1
-            self.__frame_duration_count = -1
-            self.__anim_loop_count = -1
+            self.__frame = 0
+            self.__frame_duration_count = 0
+            self.__anim_loop_count = 0
 
     @listening(c.StateEventCode.CHANGE_STATE)
     def change_state_by_event(self, event):
         if self.__current_state.can_be_changed and self.state != event.body["state"]:
             self.state = event.body["state"]
-            self.__frame = -1
-            self.__frame_duration_count = -1
-            self.__anim_loop_count = -1
+            self.__frame = 0
+            self.__frame_duration_count = 0
+            self.__anim_loop_count = 0
 
     @listening(c.EventCode.STEP)
     def step(self, event):
-        # print(self.__frame, self.__current_state, self.__frame_duration_count)
-        self.__frame_duration_count += 1
-        if self.__frame_duration_count % self.state.duration == 0:
-            self.__frame += 1
+        if (
+            self.__frame_duration_count % self.state.duration == 0
+            and self.__frame_duration_count != 0
+        ):
             self.__frame_duration_count = 0
-        if self.__frame % len(self.__current_anim[0]) == 0:
-            self.__anim_loop_count += 1
+            self.__frame += 1
+        if self.__frame % len(self.__current_anim[0]) == 0 and self.__frame != 0:
             self.__frame = 0
-        if not self.state.is_loop and self.__anim_loop_count >= 1:
-            event = EventLike(
-                c.StateEventCode.CHANGE_STATE, body={"state": State.create_idle()}
-            )
-            self.post(event)
-            return
+            self.__anim_loop_count += 1
+        if self.__anim_loop_count == 1 and not self.state.is_loop:
+            self.state.can_be_changed = True
+            self.change_state(State.create_idle())
+        if self.__anim_loop_count >= 999:
+            self.__anim_loop_count = 0
         self.image = self.__current_anim[self.__direction][self.__frame]
+        self.__frame_duration_count += 1

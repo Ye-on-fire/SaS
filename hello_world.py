@@ -36,10 +36,10 @@ import pygame
 
 
 class Mob(AnimatedSprite):
-    def __init__(self):
+    def __init__(self, post_api):
         imageset = generate_imageset("./assets/player/")
         image = imageset["idle"][0][0]
-        super().__init__(image=image, imageset=imageset)
+        super().__init__(image=image, imageset=imageset, postapi=post_api)
         self.rect.center = (500, 500)
 
     @listening(c.TempTestCode.MOVE)
@@ -58,11 +58,17 @@ class Mob(AnimatedSprite):
         if keys[pygame.K_s]:
             self.rect.y += 5
 
+    @listening(pygame.KEYDOWN)
+    def movement(self, event):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_j]:
+            self.change_state(State.create_attack())
+
 
 if __name__ == "__main__":
     co = Core()
     group = GroupLike()
-    group.add_listener(Mob())
+    group.add_listener(Mob(post_api=co.add_event))
     group.add_listener(
         EntityLike(
             pygame.Rect(410, 330, 60, 60),

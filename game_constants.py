@@ -45,6 +45,7 @@ class StateEventCode(_IntEnum):
 
 class TempTestCode(_IntEnum):
     MOVE = get_unused_event_code()
+    ATTACK = get_unused_event_code()
 
 
 # event body | 事件内容模板
