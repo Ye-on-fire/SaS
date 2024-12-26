@@ -19,7 +19,7 @@ import pygame
 #         self,
 #         rect: pygame.Rect = pygame.Rect(610, 330, 60, 60),  # x, y, width, height
 #     ):
-#         image = utils.load_image_and_scale(r".\assets\npc\monster\1.png", rect)
+#         image = utils.load_image_and_scale(r"./assets/npc/monster/1.png", rect)
 #         super().__init__(rect, image=image)
 #
 #     @listening(pygame.KEYDOWN)  # 捕获: 按下按键
@@ -63,6 +63,12 @@ class Mob(AnimatedSprite):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_j]:
             self.change_state(State.create_attack())
+        elif keys[pygame.K_SPACE]:
+            self.change_state(State.create_roll())
+
+    @listening(pygame.QUIT)
+    def quit(self, event):
+        Core.exit()
 
 
 if __name__ == "__main__":
@@ -73,7 +79,7 @@ if __name__ == "__main__":
         EntityLike(
             pygame.Rect(410, 330, 60, 60),
             image=utils.load_image_and_scale(
-                r".\assets\tiles\tree.png", pygame.Rect(510, 330, 60, 60)
+                r"./assets/tiles/tree.png", pygame.Rect(510, 330, 60, 60)
             ),
         )
     )

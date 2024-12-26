@@ -15,6 +15,10 @@ def generate_imageset(path):
         temp = [[], []]
         for j in os.listdir(os.path.join(path, i)):
             image = pygame.image.load(os.path.join(path, i, j))
+            print(f"loaded{os.path.join(path, i, j)}")
+            image = pygame.transform.scale(
+                image, (image.get_width() * 3, image.get_height() * 3)
+            )
             image_left = pygame.transform.flip(image, 1, 0)
             temp[0].append(image)
             temp[1].append(image_left)
@@ -60,7 +64,7 @@ class State:
 
     @classmethod
     def create_idle(self):
-        return self("idle", duration=5)
+        return self("idle", duration=15)
 
     @classmethod
     def create_run(self):
@@ -70,6 +74,11 @@ class State:
     def create_attack(self):
         info = {"frame_type": [0, 0, 1, 0, 0, 0]}
         return self("attack", change_flag=False, loop_flag=False, duration=5, info=info)
+
+    @classmethod
+    def create_roll(self):
+        info = {"frame_type": [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0]}
+        return self("roll", change_flag=False, loop_flag=False, duration=5, info=info)
 
     def __eq__(self, other):
         return self.name == other.name
@@ -86,6 +95,9 @@ class AnimatedSprite(EntityLike):
     direction是该角色的方向
     定义的时候应该要传入一个该角色开始的图片和状态
     默认为idle，图片为idle的第一帧
+    关于创建动画：第一步，将动画图片重命名为01，02……放在角色该动作的文件夹下
+    第二部，为该动画创建一个State类型
+    第三部，让角色加载该State即可应用动画
     """
 
     def __init__(
