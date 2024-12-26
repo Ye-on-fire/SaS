@@ -44,19 +44,20 @@ class Mob(AnimatedSprite):
 
     @listening(c.TempTestCode.MOVE)
     def move(self, event):
-        state = State("run", duration=5)
+        state = State.create_run()
         self.change_state(state)
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_a]:
-            self.faceing = 1
-            self.rect.x -= 5
-        if keys[pygame.K_d]:
-            self.faceing = 0
-            self.rect.x += 5
-        if keys[pygame.K_w]:
-            self.rect.y -= 5
-        if keys[pygame.K_s]:
-            self.rect.y += 5
+        if self.state.info["can_move"]:
+            if keys[pygame.K_a]:
+                self.faceing = 1
+                self.rect.x -= 5
+            if keys[pygame.K_d]:
+                self.faceing = 0
+                self.rect.x += 5
+            if keys[pygame.K_w]:
+                self.rect.y -= 5
+            if keys[pygame.K_s]:
+                self.rect.y += 5
 
     @listening(pygame.KEYDOWN)
     def movement(self, event):
@@ -65,6 +66,18 @@ class Mob(AnimatedSprite):
             self.change_state(State.create_attack())
         elif keys[pygame.K_SPACE]:
             self.change_state(State.create_roll())
+
+    @listening(c.EventCode.STEP)
+    def step(self, event):
+        if "frame_type" in self.state.info.keys():
+            if self.state.info["frame_type"][self.current_frame] == 2:
+                print("invincible")
+            if (
+                self.state.info["frame_type"][self.current_frame] == 1
+                and self.first_frame
+            ):
+                self.first_frame = False
+                print("attack")
 
     @listening(pygame.QUIT)
     def quit(self, event):
@@ -102,7 +115,8 @@ if __name__ == "__main__":
                 body={"state": State.create_idle()},
             )
             co.add_event(e)
-        co.add_event(EventLike.step_event(secord=0))
+        co.add_event(EventLike.anim_step_event(co.time_ms))
+        # co.add_event(EventLike.step_event(co.time_ms))
         for event in co.yield_events():
             group.listen(event)  # 听取: 核心事件队列
 

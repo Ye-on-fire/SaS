@@ -1,6 +1,7 @@
-from itertools import count
-from time import sleep
-from tracemalloc import start
+# from itertools import count
+# from time import sleep
+# from tracemalloc import start
+from enum import Flag
 import pygame
 
 import utils
@@ -34,6 +35,9 @@ def generate_imageset_for_mac(path):
             for j in os.listdir(os.path.join(path, i)):
                 if j != ".DS_Store":
                     image = pygame.image.load(os.path.join(path, i, j))
+                    print(f"loaded{os.path.join(path, i, j)}")
+                    image = pygame.transform.scale(
+                        image, (image.get_width() * 3, image.get_height() * 3)
                     image_left = pygame.transform.flip(image, 1, 0)
                     temp[0].append(image)
                     temp[1].append(image_left)
@@ -54,31 +58,40 @@ class State:
     """
 
     def __init__(
-        self, name: str, change_flag=True, loop_flag=True, info: dict = {}, duration=1
+        self,
+        name: str,
+        change_flag=True,
+        loop_flag=True,
+        info: dict = {},
+        duration=1,
+        prior_flag=False,
     ) -> None:
         self.name = name
         self.can_be_changed = change_flag
         self.is_loop = loop_flag
         self.duration = duration
+        self.high_priority = prior_flag
         self.info = info
 
     @classmethod
     def create_idle(self):
-        return self("idle", duration=15)
+        info = {"can_move": True}
+        return self("idle", duration=15, info=info)
 
     @classmethod
     def create_run(self):
-        return self("run", duration=5)
+        info = {"can_move": True}
+        return self("run", duration=5, info=info)
 
     @classmethod
     def create_attack(self):
-        info = {"frame_type": [0, 0, 1, 0, 0, 0]}
+        info = {"frame_type": [0, 0, 1, 0, 0, 0], "can_move": False}
         return self("attack", change_flag=False, loop_flag=False, duration=5, info=info)
 
     @classmethod
     def create_roll(self):
-        info = {"frame_type": [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0]}
-        return self("roll", change_flag=False, loop_flag=False, duration=5, info=info)
+        info = {"frame_type": [0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0], "can_move": True}
+        return self("roll", change_flag=False, loop_flag=False, duration=3, info=info)
 
     def __eq__(self, other):
         return self.name == other.name
@@ -122,6 +135,7 @@ class AnimatedSprite(EntityLike):
         self.__frame = 0
         self.__frame_duration_count = 0
         self.__anim_loop_count = 0
+        self.first_frame = False
 
     @property
     def faceing(self):
@@ -143,8 +157,18 @@ class AnimatedSprite(EntityLike):
         else:
             print("The current animation cant be interrputed")
 
+    @property
+    def current_frame(self):
+        return self.__frame
+
+    @property
+    def is_in_first_frame(self):
+        return self.__frame_duration_count == 1
+
     def change_state(self, new_state):
-        if self.__current_state.can_be_changed and self.state != new_state:
+        if (
+            self.__current_state.can_be_changed and self.state != new_state
+        ) or new_state.high_priority:
             self.state = new_state
             self.__frame = 0
             self.__frame_duration_count = 0
@@ -152,20 +176,23 @@ class AnimatedSprite(EntityLike):
 
     @listening(c.StateEventCode.CHANGE_STATE)
     def change_state_by_event(self, event):
-        if self.__current_state.can_be_changed and self.state != event.body["state"]:
+        if (
+            self.__current_state.can_be_changed and self.state != event.body["state"]
+        ) or event.body["state"].high_priority:
             self.state = event.body["state"]
             self.__frame = 0
             self.__frame_duration_count = 0
             self.__anim_loop_count = 0
 
-    @listening(c.EventCode.STEP)
-    def step(self, event):
+    @listening(c.EventCode.ANIMSTEP)
+    def anim_step(self, event):
         if (
             self.__frame_duration_count % self.state.duration == 0
             and self.__frame_duration_count != 0
         ):
             self.__frame_duration_count = 0
             self.__frame += 1
+            self.first_frame = True
         if self.__frame % len(self.__current_anim[0]) == 0 and self.__frame != 0:
             self.__frame = 0
             self.__anim_loop_count += 1

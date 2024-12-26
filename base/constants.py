@@ -1,3 +1,4 @@
+from webbrowser import get
 import pygame as _pygame
 import typing as _typing
 from enum import IntEnum as _IntEnum
@@ -24,6 +25,7 @@ def get_unused_event_code() -> int:
 
 
 class EventCode(_IntEnum):
+    ANIMSTEP = get_unused_event_code()
     STEP = get_unused_event_code()  # 通知监听者已经过去了一个游戏刻
     DRAW = get_unused_event_code()  # 绘制事件
     KILL = get_unused_event_code()  # 删除监听者事件（从群组等中删除监听者）

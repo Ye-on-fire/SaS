@@ -92,6 +92,11 @@ class EventLike:
         return cls(_const.EventCode.STEP, body=body, prior=200)
 
     @classmethod
+    def anim_step_event(cls, secord):
+        body = {"secord": secord}
+        return cls(_const.EventCode.ANIMSTEP, body=body, prior=100)
+
+    @classmethod
     def kill_event(cls, uuid: str) -> "EventLike":
         """
         创建KILL事件
