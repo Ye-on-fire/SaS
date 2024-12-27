@@ -38,6 +38,7 @@ def generate_imageset_for_mac(path):
                     print(f"loaded{os.path.join(path, i, j)}")
                     image = pygame.transform.scale(
                         image, (image.get_width() * 3, image.get_height() * 3)
+                    )
                     image_left = pygame.transform.flip(image, 1, 0)
                     temp[0].append(image)
                     temp[1].append(image_left)
@@ -160,10 +161,6 @@ class AnimatedSprite(EntityLike):
     @property
     def current_frame(self):
         return self.__frame
-
-    @property
-    def is_in_first_frame(self):
-        return self.__frame_duration_count == 1
 
     def change_state(self, new_state):
         if (
