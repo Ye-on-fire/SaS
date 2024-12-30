@@ -14,7 +14,7 @@ def generate_imageset(path):
     imageset = {}
     for i in os.listdir(path):
         temp = [[], []]
-        for j in os.listdir(os.path.join(path, i)):
+        for j in sorted(os.listdir(os.path.join(path, i))):
             image = pygame.image.load(os.path.join(path, i, j))
             print(f"loaded{os.path.join(path, i, j)}")
             image = pygame.transform.scale(
@@ -32,7 +32,7 @@ def generate_imageset_for_mac(path):
     for i in os.listdir(path):
         if i != ".DS_Store":
             temp = [[], []]
-            for j in os.listdir(os.path.join(path, i)):
+            for j in sorted(os.listdir(os.path.join(path, i))):
                 if j != ".DS_Store":
                     image = pygame.image.load(os.path.join(path, i, j))
                     print(f"loaded{os.path.join(path, i, j)}")
