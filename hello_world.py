@@ -9,7 +9,7 @@ from base.constants import EventCode
 import utils
 import game_constants as c
 from game_collections import EventLike, Core, listening, EntityLike, GroupLike
-from custom_collections import State, AnimatedSprite, generate_imageset
+from custom_collections import State, AnimatedSprite, generate_imageset_for_mac
 
 import pygame
 
@@ -37,7 +37,7 @@ import pygame
 
 class Mob(AnimatedSprite):
     def __init__(self, post_api):
-        imageset = generate_imageset("./assets/player/")
+        imageset = generate_imageset_for_mac("./assets/player/")
         image = imageset["idle"][0][0]
         super().__init__(image=image, imageset=imageset, postapi=post_api)
         self.rect.center = (500, 500)
