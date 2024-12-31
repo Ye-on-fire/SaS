@@ -200,3 +200,76 @@ class AnimatedSprite(EntityLike):
             self.__anim_loop_count = 0
         self.image = self.__current_anim[self.__direction][self.__frame]
         self.__frame_duration_count += 1
+
+
+class Player(AnimatedSprite):
+    def __init__(self, post_api):
+        if c.PLATFORM == "darwin":
+            imageset = generate_imageset_for_mac("./assets/player/")
+        else:
+            imageset = generate_imageset("./assets/player/")
+        image = imageset["idle"][0][0]
+        super().__init__(image=image, imageset=imageset, postapi=post_api)
+        self.rect.center = (500, 500)
+
+    @listening(c.MoveEventCode.PREMOVE)
+    def try_move(self, event):
+        state = State.create_run()
+        self.change_state(state)
+        try_move_rect = self.rect
+        keys = pygame.key.get_pressed()
+        if self.state.info["can_move"]:
+            if keys[pygame.K_a]:
+                self.faceing = 1
+                self.try_move_rect.x -= 5
+            if keys[pygame.K_d]:
+                self.faceing = 0
+                self.try_move_rect.x += 5
+            if keys[pygame.K_w]:
+                self.try_move_rect.y -= 5
+            if keys[pygame.K_s]:
+                self.try_move_rect.y += 5
+        self.post(
+            EventLike(
+                c.MoveEventCode.MOVEATTEMPT,
+                sender=self.uuid,
+                body={"pos": try_move_rect},
+            )
+        )
+
+    @listening(c.MoveEventCode.MOVEALLOW)
+    def move(self, event):
+        self.rect = event.body["pos"]
+
+    @listening(pygame.KEYDOWN)
+    def behavior(self, event):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_j]:
+            self.change_state(State.create_attack())
+        elif keys[pygame.K_SPACE]:
+            self.change_state(State.create_roll())
+
+    @listening(c.EventCode.STEP)
+    def step(self, event):
+        if "frame_type" in self.state.info.keys():
+            if self.state.info["frame_type"][self.current_frame] == 2:
+                print("invincible")
+            if (
+                self.state.info["frame_type"][self.current_frame] == 1
+                and self.first_frame
+            ):
+                self.first_frame = False
+                print("attack")
+
+
+class StaticObject(EventLike):
+    def __init__(self, post_api, image):
+        super().__init__(post_api=post_api)
+        self.image = image
+        self.rect: pygame.Rect = image.get_rect()
+
+    @listening(c.MoveEventCode.MOVEATTEMPT)
+    def judge_move(self, event):
+        if self.rect.colliderect(event.body["pos"]):
+            return
+        self.post(EventLike(c.MoveEventCode.MOVEALLOW, sender=self.uuid))

@@ -1,9 +1,12 @@
 import typing as _typing
 import pygame as _pygame
+from platform import system
 from enum import IntEnum as _IntEnum
 
 
 from base.constants import *
+
+PLATFORM = system()
 
 if _typing.TYPE_CHECKING:
     from game_collections import SceneLike
@@ -41,6 +44,12 @@ class SceneEventCode(_IntEnum):
 
 class StateEventCode(_IntEnum):
     CHANGE_STATE = get_unused_event_code()
+
+
+class MoveEventCode(_IntEnum):
+    PREMOVE = get_unused_event_code()
+    MOVEATTEMPT = get_unused_event_code()
+    MOVEALLOW = get_unused_event_code()
 
 
 class TempTestCode(_IntEnum):

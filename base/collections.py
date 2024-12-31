@@ -322,7 +322,7 @@ class ListenerLike:
         self.__post_api = post_api
 
     @property
-    def uuid(self) -> int:
+    def uuid(self) -> str:
         """监听者的UUID"""
         return str(id(self))
 
