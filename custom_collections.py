@@ -2,6 +2,7 @@
 # from time import sleep
 # from tracemalloc import start
 from enum import Flag
+from shutil import move
 import pygame
 
 import utils
@@ -203,6 +204,10 @@ class AnimatedSprite(EntityLike):
 
 
 class Player(AnimatedSprite):
+    """
+    游戏角色类，包含对角色移动，动作，动画的控制
+    """
+
     def __init__(self, post_api):
         if c.PLATFORM == "darwin":
             imageset = generate_imageset_for_mac("./assets/player/")
@@ -216,24 +221,24 @@ class Player(AnimatedSprite):
     def try_move(self, event):
         state = State.create_run()
         self.change_state(state)
-        try_move_rect = self.rect
         keys = pygame.key.get_pressed()
+        move_offset = pygame.Vector2(0, 0)
         if self.state.info["can_move"]:
             if keys[pygame.K_a]:
                 self.faceing = 1
-                self.try_move_rect.x -= 5
+                move_offset.x -= 5
             if keys[pygame.K_d]:
                 self.faceing = 0
-                self.try_move_rect.x += 5
+                move_offset.x += 5
             if keys[pygame.K_w]:
-                self.try_move_rect.y -= 5
+                move_offset.y -= 5
             if keys[pygame.K_s]:
-                self.try_move_rect.y += 5
+                move_offset.y += 5
         self.post(
             EventLike(
                 c.MoveEventCode.MOVEATTEMPT,
                 sender=self.uuid,
-                body={"pos": try_move_rect},
+                body={"move_offset": move_offset, "original_pos": self.rect.copy()},
             )
         )
 
@@ -261,15 +266,35 @@ class Player(AnimatedSprite):
                 self.first_frame = False
                 print("attack")
 
+    @listening(pygame.QUIT)
+    def quit_game(self, event):
+        Core.exit()
 
-class StaticObject(EventLike):
+
+class StaticObject(EntityLike):
     def __init__(self, post_api, image):
-        super().__init__(post_api=post_api)
-        self.image = image
-        self.rect: pygame.Rect = image.get_rect()
+        rect = image.get_rect()
+        super().__init__(post_api=post_api, rect=rect, image=image)
 
     @listening(c.MoveEventCode.MOVEATTEMPT)
     def judge_move(self, event):
-        if self.rect.colliderect(event.body["pos"]):
-            return
-        self.post(EventLike(c.MoveEventCode.MOVEALLOW, sender=self.uuid))
+        offset = event.body["move_offset"]
+        new_rect = event.body["original_pos"].copy()
+        move_rect = event.body["original_pos"].copy()
+        move_rect.x += offset.x
+        move_rect.y += offset.y
+        new_rect.x += offset.x
+        if self.rect.colliderect(new_rect):
+            move_rect.x -= offset.x
+        new_rect.x -= offset.x
+        new_rect.y += offset.y
+        if self.rect.colliderect(new_rect):
+            move_rect.y -= offset.y
+        self.post(
+            EventLike(
+                c.MoveEventCode.MOVEALLOW,
+                sender=self.uuid,
+                body={"pos": move_rect},
+                receivers={event.sender},
+            )
+        )
