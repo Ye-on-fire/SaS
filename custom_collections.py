@@ -245,6 +245,7 @@ class Player(AnimatedSprite):
     @listening(c.MoveEventCode.MOVEALLOW)
     def move(self, event):
         self.rect = event.body["pos"]
+        self.post(EventLike(c.MoveEventCode.MOVECAMERA, body={"chara": self}))
 
     @listening(pygame.KEYDOWN)
     def behavior(self, event):

@@ -1,3 +1,4 @@
+from hmac import new
 from typing import (
     List,
     Dict,
@@ -155,6 +156,7 @@ class SceneLike(GroupLike):
     # attributes
     __core: Core
     __camera_cord: Tuple[int, int]
+    __map_size: Tuple[int, int]
     is_activated: bool
     layers: collections.defaultdict[int, List[ListenerLike]]
     caches: Dict[str, Any]
@@ -177,7 +179,17 @@ class SceneLike(GroupLike):
 
     @camera_cord.setter
     def camera_cord(self, new_cord: Tuple[int, int]) -> None:
-        self.__camera_cord = new_cord
+        x, y = new_cord
+        if new_cord[0] < 0:
+            x = 0
+        elif new_cord[0] + self.core.window.get_width() > self.__map_size[0]:
+            x = self.__map_size[0] - self.core.window.get_width()
+        if new_cord[1] < 0:
+            y = 0
+        elif new_cord[1] + self.core.window.get_height() > self.__map_size[1]:
+            y = self.__map_size[1] - self.core.window.get_height()
+        result_cord = (x, y)
+        self.__camera_cord = result_cord
 
     def __init__(
         self,
@@ -185,6 +197,7 @@ class SceneLike(GroupLike):
         *,
         listen_receivers: Optional[Set[str]] = None,
         post_api: Optional[PostEventApiLike] = None,
+        mapsize=(3000, 2000),
     ):
         """
         Parameters
@@ -202,11 +215,18 @@ class SceneLike(GroupLike):
         )
         self.__core: Core = core
         self.__camera_cord: Tuple[int, int] = (0, 0)
+        self.__map_size = mapsize
         self.layers: collections.defaultdict[int, List[ListenerLike]] = (
             collections.defaultdict(list)
         )
         self.caches: Dict[str, Any] = {}
         self.is_activated = False
+
+    def update_camera_by_chara(self, chara: EntityLike):
+        self.camera_cord = (
+            chara.rect.centerx - self.core.window.get_width() / 2,
+            chara.rect.centery - self.core.window.get_height() / 2,
+        )
 
     def __enter__(self):
         """
@@ -248,6 +268,10 @@ class SceneLike(GroupLike):
         if event.code == c.EventCode.DRAW:
             return
         self.member_listen(event)
+
+    @listening(c.MoveEventCode.MOVECAMERA)
+    def move_camera(self, event):
+        self.update_camera_by_chara(event.body["chara"])
 
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):

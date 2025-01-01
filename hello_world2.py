@@ -3,7 +3,14 @@ import pygame
 from base.constants import EventCode
 import utils
 import game_constants as c
-from game_collections import EventLike, Core, listening, EntityLike, GroupLike
+from game_collections import (
+    EventLike,
+    Core,
+    listening,
+    EntityLike,
+    GroupLike,
+    SceneLike,
+)
 from custom_collections import (
     State,
     AnimatedSprite,
@@ -16,16 +23,20 @@ import pygame
 
 if __name__ == "__main__":
     co = Core()
-    group_player = GroupLike()
-    group_player.add_listener(Player(post_api=co.add_event))
-    group_walls = GroupLike()
+    player = Player(post_api=co.add_event)
     wall = StaticObject(
         image=pygame.image.load("./assets/tiles/tree.png"),
         post_api=co.add_event,
     )
     wall.rect.x = 300
     wall.rect.y = 300
-    group_walls.add_listener(wall)
+    scene1 = SceneLike(core=co)
+    scene1.add_listener(player)
+    scene1.add_listener(wall)
+    scene1.layers[0] = []
+    scene1.layers[0].append(player)
+    scene1.layers[0].append(wall)
+
     while True:
         co.window.fill((0, 0, 0))  # 全屏涂黑
         ckeys = pygame.key.get_pressed()
@@ -48,8 +59,6 @@ if __name__ == "__main__":
         co.add_event(EventLike.step_event(co.time_ms))
         co.add_event(EventLike.draw_event(co.window))
         for event in co.yield_events():
-            group_walls.listen(event)
-            group_player.listen(event)  # 听取: 核心事件队列
-
+            scene1.listen(event)
         co.flip()  # 更新屏幕缓冲区
         co.tick(60)

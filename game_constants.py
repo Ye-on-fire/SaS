@@ -47,6 +47,7 @@ class StateEventCode(_IntEnum):
 
 
 class MoveEventCode(_IntEnum):
+    MOVECAMERA = get_unused_event_code()
     PREMOVE = get_unused_event_code()
     MOVEATTEMPT = get_unused_event_code()
     MOVEALLOW = get_unused_event_code()
