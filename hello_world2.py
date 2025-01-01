@@ -10,13 +10,11 @@ from game_collections import (
     EntityLike,
     GroupLike,
     SceneLike,
-)
-from custom_collections import (
     State,
     AnimatedSprite,
     generate_imageset_for_mac,
     Player,
-    StaticObject,
+    Tile,
 )
 
 import pygame
@@ -24,21 +22,14 @@ import pygame
 if __name__ == "__main__":
     co = Core()
     player = Player(post_api=co.add_event)
-    wall = StaticObject(
-        image=pygame.image.load("./assets/tiles/tree.png"),
-        post_api=co.add_event,
-    )
-    wall.rect.x = 300
-    wall.rect.y = 300
     scene1 = SceneLike(core=co)
+    scene1.load_tilemap("./maps/1.json")
     scene1.add_listener(player)
-    scene1.add_listener(wall)
-    scene1.layers[0] = []
-    scene1.layers[0].append(player)
-    scene1.layers[0].append(wall)
+    scene1.layers[1] = []
+    scene1.layers[1].append(player)
 
     while True:
-        co.window.fill((0, 0, 0))  # 全屏涂黑
+        co.window.fill("black")  # 全屏涂黑
         ckeys = pygame.key.get_pressed()
         if (
             ckeys[pygame.K_a]
@@ -56,8 +47,6 @@ if __name__ == "__main__":
             )
             co.add_event(e)
         co.add_event(EventLike.anim_step_event(co.time_ms))
-        co.add_event(EventLike.step_event(co.time_ms))
-        co.add_event(EventLike.draw_event(co.window))
         for event in co.yield_events():
             scene1.listen(event)
         co.flip()  # 更新屏幕缓冲区
