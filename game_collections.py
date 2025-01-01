@@ -420,54 +420,6 @@ class Tile(EntityLike):
         self.rect.top = new_cord[1] * self.height
 
 
-# class Wall(Tile):
-#     def __init__(self, post_api, image):
-#         rect = image.get_rect()
-#         super().__init__(post_api=post_api, rect=rect, image=image)
-#
-#     @listening(c.MoveEventCode.MOVEATTEMPT)
-#     def am(self, event):
-#         offset = event.body["move_offset"]
-#         new_rect = event.body["original_pos"].copy()
-#         new_rect.x += offset.x
-#         new_rect.y += offset.y
-#         if self.rect.colliderect(new_rect):
-#             print("peng")
-#             return
-#         print("no")
-#         self.post(
-#             EventLike(
-#                 c.MoveEventCode.MOVEALLOW,
-#                 sender=self.uuid,
-#                 body={"pos": new_rect},
-#                 receivers={event.sender},
-#             )
-#         )
-
-# @listening(c.MoveEventCode.MOVEATTEMPT)
-# def judge_move(self, event):  # 比tile多了一个检测碰撞的机制
-#     offset = event.body["move_offset"]
-#     new_rect = event.body["original_pos"].copy()
-#     move_rect = event.body["original_pos"].copy()
-#     move_rect.x += offset.x
-#     move_rect.y += offset.y
-#     new_rect.x += offset.x
-#     if self.rect.colliderect(new_rect):
-#         move_rect.x -= offset.x
-#     new_rect.x -= offset.x
-#     new_rect.y += offset.y
-#     if self.rect.colliderect(new_rect):
-#         move_rect.y -= offset.y
-#     self.post(
-#         EventLike(
-#             c.MoveEventCode.MOVEALLOW,
-#             sender=self.uuid,
-#             body={"pos": move_rect},
-#             receivers={event.sender},
-#         )
-#     )
-
-
 class SceneLike(GroupLike):
     """
     场景类, 主要提供相机坐标, 图层控制, 以及进入与退出
@@ -495,6 +447,7 @@ class SceneLike(GroupLike):
     __core: Core
     __camera_cord: Tuple[int, int]
     __map_size: Tuple[int, int]
+    name: str
     is_activated: bool
     layers: collections.defaultdict[int, List[ListenerLike]]
     caches: Dict[str, Any]
@@ -538,6 +491,7 @@ class SceneLike(GroupLike):
         listen_receivers: Optional[Set[str]] = None,
         post_api: Optional[PostEventApiLike] = None,
         mapsize=(3000, 2000),
+        name="",
     ):
         """
         Parameters
@@ -562,6 +516,7 @@ class SceneLike(GroupLike):
         self.caches: Dict[str, Any] = {}
         self.walls: list[EntityLike] = []
         self.is_activated = False
+        self.name = name
 
     def update_camera_by_chara(self, chara: EntityLike):
         self.camera_cord = (
@@ -711,3 +666,15 @@ class SceneLike(GroupLike):
         for i in self.layers:
             self.layers[i][:] = [j for j in self.layers[i] if j.uuid != uuid]
         super().kill(event)
+
+
+def SceneManager(ListenerLike):
+    def __init__(self, postapi, scenelist, inital_scene_name):
+        super().__init__(post_api=postapi)
+        self.__scene_list = scenelist
+        self.current_scene = self.__scene_list[inital_scene_name]
+
+    @listening(c.SceneEventCode.CHANGE_SCENE)
+    def change_scene(self, event):
+        if event.body["new_scene"].name in self.__scene_list.keys():
+            self.current_scene = self.__scene_list[event.body["new_scene"].name]

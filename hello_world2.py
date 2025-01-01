@@ -22,7 +22,7 @@ import pygame
 if __name__ == "__main__":
     co = Core()
     player = Player(post_api=co.add_event)
-    scene1 = SceneLike(core=co)
+    scene1 = SceneLike(core=co, name="1")
     scene1.load_tilemap("./maps/1.json")
     scene1.add_listener(player)
     scene1.layers[1] = []
