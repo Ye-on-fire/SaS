@@ -2,6 +2,7 @@ from dis import pretty_flags
 from hmac import new
 import json
 from pdb import post_mortem
+from tarfile import data_filter
 from typing import (
     List,
     Dict,
@@ -332,13 +333,15 @@ class Player(AnimatedSprite):
     """
 
     def __init__(self, post_api):
-        if c.PLATFORM == "darwin":
+        if c.PLATFORM == "Darwin":
             imageset = generate_imageset_for_mac("./assets/player/")
         else:
             imageset = generate_imageset("./assets/player/")
         image = imageset["idle"][0][0]
         super().__init__(image=image, imageset=imageset, postapi=post_api)
         self.rect.center = (500, 500)
+        self.hp = 100
+        self.damage = 10
 
     @listening(c.MoveEventCode.PREMOVE)
     def try_move(self, event):
@@ -388,11 +391,48 @@ class Player(AnimatedSprite):
                 and self.first_frame
             ):
                 self.first_frame = False
-                print("attack")
+                if self.faceing == 0:
+                    attack_rect = pygame.Rect(
+                        self.rect.centerx,
+                        self.rect.centery + self.rect.height // 2,
+                        50,
+                        100,
+                    )
+                else:
+                    attack_rect = pygame.Rect(
+                        self.rect.centerx - 50,
+                        self.rect.centery + self.rect.height // 2,
+                        50,
+                        100,
+                    )
+                self.post(
+                    EventLike(
+                        c.BattleCode.PLAYERATTACK,
+                        sender=self.uuid,
+                        body={"rect": attack_rect, "damage": self.damage},
+                    )
+                )
 
-    @listening(pygame.QUIT)
-    def quit_game(self, event):
-        Core.exit()
+
+class Enemy(AnimatedSprite):
+    def __init__(
+        self,
+        imageset,
+        image: pygame.Surface,
+        state: State = State.create_idle(),
+        direction=0,
+        postapi=None,
+        hp=100,
+        damage=10,
+    ):
+        super().__init__(imageset, image, state, direction, postapi)
+        self.hp = hp
+        self.damage = damage
+
+    @listening(c.BattleCode.PLAYERATTACK)
+    def take_damage(self, event):
+        if self.rect.colliderect(event.body["rect"]):
+            self.hp -= event.body["damage"]
 
 
 class Tile(EntityLike):
@@ -521,6 +561,15 @@ class SceneLike(GroupLike):
         self.player = player
         self.enemies = []
 
+    @property
+    def player(self):
+        return self.__player
+
+    @player.setter
+    def player(self, new_player):
+        self.__player = new_player
+        self.update_camera_by_chara(new_player)
+
     def update_camera_by_chara(self, chara: EntityLike):
         self.camera_cord = (
             chara.rect.centerx - self.core.window.get_width() / 2,
@@ -547,6 +596,7 @@ class SceneLike(GroupLike):
                     self.walls.append(tile)
                 self.add_listener(tile)
                 self.layers[0].append(tile)
+        print("load map complete")
 
     def __enter__(self):
         """
@@ -611,6 +661,7 @@ class SceneLike(GroupLike):
         for wall in self.walls:
             if wall.rect.colliderect(rect_add_y_offset):
                 can_move_vertical = False
+                break
         if can_move_horizental:
             new_rect.x += event.body["move_offset"].x
         if can_move_vertical:
@@ -670,6 +721,10 @@ class SceneLike(GroupLike):
             self.layers[i][:] = [j for j in self.layers[i] if j.uuid != uuid]
         super().kill(event)
 
+    @listening(pygame.QUIT)
+    def quit_game(self, event):
+        Core.exit()
+
 
 class SceneManager(ListenerLike):
     def __init__(self, post_api, scenelist, inital_scene_name):
@@ -686,6 +741,7 @@ class SceneManager(ListenerLike):
             self.current_scene = self.__scene_list[event.body["scene_name"]]
             self.current_scene.player.rect.x = event.body["playerpos"][0]
             self.current_scene.player.rect.y = event.body["playerpos"][1]
+            self.current_scene.update_camera_by_chara(self.current_scene.player)
         else:
             print("no such scene")
 

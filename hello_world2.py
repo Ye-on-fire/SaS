@@ -49,7 +49,7 @@ if __name__ == "__main__":
             co.add_event(
                 EventLike(
                     c.SceneEventCode.CHANGE_SCENE,
-                    body={"scene_name": "2", "playerpos": (500, 500)},
+                    body={"scene_name": "2", "playerpos": (800, 500)},
                 )
             )
         else:

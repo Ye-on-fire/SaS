@@ -53,9 +53,13 @@ class MoveEventCode(_IntEnum):
     MOVEALLOW = get_unused_event_code()
 
 
+class BattleCode(_IntEnum):
+    PLAYERATTACK = get_unused_event_code()
+    ENEMYATTACK = get_unused_event_code()
+
+
 class TempTestCode(_IntEnum):
     MOVE = get_unused_event_code()
-    ATTACK = get_unused_event_code()
 
 
 # event body | 事件内容模板
