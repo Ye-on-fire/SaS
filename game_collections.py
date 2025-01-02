@@ -190,12 +190,14 @@ class State:
         loop_flag=True,
         info: dict = {},
         duration=1,
+        death_flag=False,
         prior_flag=False,
     ) -> None:
         self.name = name
         self.can_be_changed = change_flag
         self.is_loop = loop_flag
         self.duration = duration
+        self.death_flag = death_flag
         self.high_priority = prior_flag
         self.info = info
 
@@ -218,6 +220,12 @@ class State:
     def create_roll(cls):
         info = {"frame_type": [0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0], "can_move": True}
         return cls("roll", change_flag=False, loop_flag=False, duration=3, info=info)
+
+    @classmethod
+    def create_die(cls):
+        return cls(
+            "die", change_flag=False, loop_flag=False, duration=3, death_flag=True
+        )
 
     def __eq__(self, other):
         return self.name == other.name
@@ -245,14 +253,14 @@ class AnimatedSprite(EntityLike):
         image: pygame.Surface,
         state: State = State.create_idle(),
         direction=0,
-        postapi=None,
+        post_api=None,
     ):
         # direction:1左，0为右
         #
         # state记录当前动画的状态并改变动画
         self.image = image
         rect = image.get_rect()
-        super().__init__(rect=rect, post_api=postapi)
+        super().__init__(rect=rect, post_api=post_api)
         # 动画相关
         self.__imageset = imageset
         self.__current_state = state
@@ -320,6 +328,8 @@ class AnimatedSprite(EntityLike):
             self.__anim_loop_count += 1
         if self.__anim_loop_count == 1 and not self.state.is_loop:
             self.state.can_be_changed = True
+            if self.state.death_flag:
+                self.post(EventLike(c.EventCode.KILL, body={"suicide": self.uuid}))
             self.change_state(State.create_idle())
         if self.__anim_loop_count >= 999:
             self.__anim_loop_count = 0
@@ -338,7 +348,7 @@ class Player(AnimatedSprite):
         else:
             imageset = generate_imageset("./assets/player/")
         image = imageset["idle"][0][0]
-        super().__init__(image=image, imageset=imageset, postapi=post_api)
+        super().__init__(image=image, imageset=imageset, post_api=post_api)
         self.rect.center = (500, 500)
         self.hp = 100
         self.damage = 10
@@ -394,14 +404,14 @@ class Player(AnimatedSprite):
                 if self.faceing == 0:
                     attack_rect = pygame.Rect(
                         self.rect.centerx,
-                        self.rect.centery + self.rect.height // 2,
+                        self.rect.centery - self.rect.height // 2,
                         50,
                         100,
                     )
                 else:
                     attack_rect = pygame.Rect(
                         self.rect.centerx - 50,
-                        self.rect.centery + self.rect.height // 2,
+                        self.rect.centery - self.rect.height // 2,
                         50,
                         100,
                     )
@@ -418,21 +428,25 @@ class Enemy(AnimatedSprite):
     def __init__(
         self,
         imageset,
-        image: pygame.Surface,
         state: State = State.create_idle(),
         direction=0,
-        postapi=None,
+        post_api=None,
         hp=100,
         damage=10,
     ):
-        super().__init__(imageset, image, state, direction, postapi)
+        image = imageset["idle"][0][0]
+        super().__init__(imageset, image, state, direction, post_api)
         self.hp = hp
         self.damage = damage
 
     @listening(c.BattleCode.PLAYERATTACK)
     def take_damage(self, event):
+        print("into")
         if self.rect.colliderect(event.body["rect"]):
             self.hp -= event.body["damage"]
+            print(self.hp)
+        if self.hp <= 0:
+            self.change_state(State.create_die())
 
 
 class Tile(EntityLike):
