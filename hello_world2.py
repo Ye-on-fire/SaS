@@ -15,6 +15,7 @@ from game_collections import (
     generate_imageset_for_mac,
     Player,
     Tile,
+    SceneManager,
 )
 
 import pygame
@@ -22,11 +23,16 @@ import pygame
 if __name__ == "__main__":
     co = Core()
     player = Player(post_api=co.add_event)
-    scene1 = SceneLike(core=co, name="1")
+    scene1 = SceneLike(core=co, name="1", player=player)
     scene1.load_tilemap("./maps/1.json")
     scene1.add_listener(player)
-    scene1.layers[1] = []
     scene1.layers[1].append(player)
+    scene2 = SceneLike(core=co, name="2", player=player)
+    scene2.load_tilemap("./maps/2.json")
+    scene2.add_listener(player)
+    scene2.layers[1].append(player)
+    scenemanager = SceneManager(co.add_event, {"1": scene1, "2": scene2}, "1")
+    # scene1.layers[1] = []
 
     while True:
         co.window.fill("black")  # 全屏涂黑
@@ -39,6 +45,13 @@ if __name__ == "__main__":
         ):
             e = EventLike(c.MoveEventCode.PREMOVE, prior=100, body={})
             co.add_event(e)
+        elif ckeys[pygame.K_o]:
+            co.add_event(
+                EventLike(
+                    c.SceneEventCode.CHANGE_SCENE,
+                    body={"scene_name": "2", "playerpos": (500, 500)},
+                )
+            )
         else:
             e = EventLike(
                 c.StateEventCode.CHANGE_STATE,
@@ -48,6 +61,7 @@ if __name__ == "__main__":
             co.add_event(e)
         co.add_event(EventLike.anim_step_event(co.time_ms))
         for event in co.yield_events():
-            scene1.listen(event)
+            scenemanager.listen(event)
+            scenemanager.current_scene.listen(event)
         co.flip()  # 更新屏幕缓冲区
         co.tick(60)

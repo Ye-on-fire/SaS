@@ -199,24 +199,24 @@ class State:
         self.info = info
 
     @classmethod
-    def create_idle(self):
+    def create_idle(cls):
         info = {"can_move": True}
-        return self("idle", duration=15, info=info)
+        return cls("idle", duration=15, info=info)
 
     @classmethod
-    def create_run(self):
+    def create_run(cls):
         info = {"can_move": True}
-        return self("run", duration=5, info=info)
+        return cls("run", duration=5, info=info)
 
     @classmethod
-    def create_attack(self):
+    def create_attack(cls):
         info = {"frame_type": [0, 0, 1, 0, 0, 0], "can_move": False}
-        return self("attack", change_flag=False, loop_flag=False, duration=5, info=info)
+        return cls("attack", change_flag=False, loop_flag=False, duration=5, info=info)
 
     @classmethod
-    def create_roll(self):
+    def create_roll(cls):
         info = {"frame_type": [0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0], "can_move": True}
-        return self("roll", change_flag=False, loop_flag=False, duration=3, info=info)
+        return cls("roll", change_flag=False, loop_flag=False, duration=3, info=info)
 
     def __eq__(self, other):
         return self.name == other.name
@@ -492,6 +492,7 @@ class SceneLike(GroupLike):
         post_api: Optional[PostEventApiLike] = None,
         mapsize=(3000, 2000),
         name="",
+        player=None,
     ):
         """
         Parameters
@@ -517,6 +518,8 @@ class SceneLike(GroupLike):
         self.walls: list[EntityLike] = []
         self.is_activated = False
         self.name = name
+        self.player = player
+        self.enemies = []
 
     def update_camera_by_chara(self, chara: EntityLike):
         self.camera_cord = (
@@ -668,13 +671,24 @@ class SceneLike(GroupLike):
         super().kill(event)
 
 
-def SceneManager(ListenerLike):
-    def __init__(self, postapi, scenelist, inital_scene_name):
-        super().__init__(post_api=postapi)
+class SceneManager(ListenerLike):
+    def __init__(self, post_api, scenelist, inital_scene_name):
+        super().__init__(post_api=post_api)
         self.__scene_list = scenelist
         self.current_scene = self.__scene_list[inital_scene_name]
 
+    def add_scene(self, scene: SceneLike):
+        self.__scene_list[scene.name] = scene
+
     @listening(c.SceneEventCode.CHANGE_SCENE)
     def change_scene(self, event):
-        if event.body["new_scene"].name in self.__scene_list.keys():
-            self.current_scene = self.__scene_list[event.body["new_scene"].name]
+        if event.body["scene_name"] in self.__scene_list.keys():
+            self.current_scene = self.__scene_list[event.body["scene_name"]]
+            self.current_scene.player.rect.x = event.body["playerpos"][0]
+            self.current_scene.player.rect.y = event.body["playerpos"][1]
+        else:
+            print("no such scene")
+
+    @listening(c.SceneEventCode.RESTART)
+    def restart_scene(self, event):
+        self.__scene_list[event.body["scene_name"]] = event.body["pre_loaded_scene"]
