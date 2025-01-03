@@ -8,6 +8,7 @@ EVERYONE_RECEIVER: _typing.Final = "constants_everyone"  # 事件接收者: 所�
 
 # event code
 __user_event_start: _typing.Final = _pygame.USEREVENT
+__scene_start = 0
 
 
 def get_unused_event_code() -> int:
@@ -22,6 +23,12 @@ def get_unused_event_code() -> int:
     global __user_event_start
     __user_event_start += 1
     return __user_event_start
+
+
+def get_unused_scene_code() -> int:
+    global __scene_start
+    __scene_start += 1
+    return __scene_start
 
 
 class EventCode(_IntEnum):

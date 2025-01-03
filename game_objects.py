@@ -159,14 +159,14 @@ class Player(AnimatedSprite):
             surface.blit(text_surface, text_rect)
 
 
-class Enemy(AnimatedSprite):
+class Skeleton(AnimatedSprite):
     def __init__(
         self,
-        imageset,
+        imageset=generate_imageset("./assets/skeleton/"),
         state: State = State.create_idle(),
         direction=0,
         post_api=None,
-        hp=10,
+        hp=30,
         damage=10,
         money_drop=10,
     ):
@@ -175,6 +175,10 @@ class Enemy(AnimatedSprite):
         self.hp = hp
         self.damage = damage
         self.money_drop = money_drop
+
+    @classmethod
+    def create_self(cls, post_api):
+        return cls(post_api=post_api)
 
     @listening(c.BattleCode.PLAYERATTACK)
     def take_damage(self, event):

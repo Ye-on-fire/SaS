@@ -146,19 +146,36 @@ class EntityLike(ListenerLike, pygame.sprite.Sprite):
 
 
 def generate_imageset(path):
-    imageset = {}
-    for i in os.listdir(path):
-        temp = [[], []]
-        for j in sorted(os.listdir(os.path.join(path, i))):
-            image = pygame.image.load(os.path.join(path, i, j))
-            print(f"loaded{os.path.join(path, i, j)}")
-            image = pygame.transform.scale(
-                image, (image.get_width() * 3, image.get_height() * 3)
-            )
-            image_left = pygame.transform.flip(image, 1, 0)
-            temp[0].append(image)
-            temp[1].append(image_left)
-        imageset[i] = temp
+    if c.PLATFORM == "Darwin":
+        imageset = {}
+        for i in os.listdir(path):
+            temp = [[], []]
+            for j in sorted(os.listdir(os.path.join(path, i))):
+                image = pygame.image.load(os.path.join(path, i, j))
+                print(f"loaded{os.path.join(path, i, j)}")
+                image = pygame.transform.scale(
+                    image, (image.get_width() * 3, image.get_height() * 3)
+                )
+                image_left = pygame.transform.flip(image, 1, 0)
+                temp[0].append(image)
+                temp[1].append(image_left)
+            imageset[i] = temp
+    else:
+        imageset = {}
+        for i in os.listdir(path):
+            if i != ".DS_Store":
+                temp = [[], []]
+                for j in sorted(os.listdir(os.path.join(path, i))):
+                    if j != ".DS_Store":
+                        image = pygame.image.load(os.path.join(path, i, j))
+                        print(f"loaded{os.path.join(path, i, j)}")
+                        image = pygame.transform.scale(
+                            image, (image.get_width() * 3, image.get_height() * 3)
+                        )
+                        image_left = pygame.transform.flip(image, 1, 0)
+                        temp[0].append(image)
+                        temp[1].append(image_left)
+                    imageset[i] = temp
     return imageset
 
 
@@ -348,9 +365,18 @@ class AnimatedSprite(EntityLike):
 
 
 class Tile(EntityLike):
-    def __init__(self, post_api, image, rect: pygame.Rect = None):
+    def __init__(
+        self,
+        post_api,
+        image,
+        rect: pygame.Rect = None,
+        map_tile_width=16,
+        map_tile_height=16,
+    ):
         rect: pygame.Rect = image.get_rect()
         super().__init__(post_api=post_api, rect=rect, image=image)
+        self.map_tile_width = map_tile_width
+        self.map_tile_height = map_tile_height
 
     @property
     def width(self):  # 获得tile的宽度
@@ -359,6 +385,14 @@ class Tile(EntityLike):
     @property
     def height(self):  # 获得tile的长度
         return self.rect.height
+
+    @property
+    def tile_width(self):
+        return self.rect.width // self.map_tile_width
+
+    @property
+    def tile_height(self):
+        return self.rect.height // self.map_tile_height
 
     @property
     def tile_cord(self) -> tuple[int, int]:  # 可以把当前的贴图坐标计算出来
@@ -436,6 +470,14 @@ class SceneLike(GroupLike):
         result_cord = (x, y)
         self.__camera_cord = result_cord
 
+    @property
+    def map_width(self):
+        return self.__map_size[0]
+
+    @property
+    def map_height(self):
+        return self.__map_size[1]
+
     def __init__(
         self,
         core: Core,
@@ -470,7 +512,8 @@ class SceneLike(GroupLike):
         self.walls: list[EntityLike] = []
         self.is_activated = False
         self.name = name
-        self.player = player
+        self.__player = player
+        self.update_camera_by_chara(self.__player)
         self.enemies = []
 
     @property

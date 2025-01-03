@@ -1,4 +1,5 @@
 import pygame
+from pygame.transform import scale
 
 from base.constants import EventCode
 import utils
@@ -18,30 +19,27 @@ from game_collections import (
     Tile,
     SceneManager,
 )
-from game_objects import Player, Enemy
+from game_objects import Player, Skeleton
+from scenes import *
 
 import pygame
 
 if __name__ == "__main__":
     co = Core()
     player = Player(post_api=co.add_event)
-    enemy = Enemy(
-        post_api=co.add_event, imageset=generate_imageset("./assets/skeleton/")
+    mapgen = MapGenerator(
+        width=30,
+        height=40,
+        scale=3,
+        path="./assets/mytiles/grassland/",
+        core=co,
+        player=player,
+        enemy_amount=3,
+        obstacle_amount=4,
     )
-    enemy.rect.move_ip((300, 500))
-    scene1 = SceneLike(core=co, name="1", player=player)
-    scene1.load_tilemap("./maps/1.json")
-    scene1.add_listener(player)
-    scene1.layers[1].append(player)
-    scene2 = SceneLike(core=co, name="2", player=player)
-    scene2.load_tilemap("./maps/2.json")
-    scene2.add_listener(player)
-    scene2.add_listener(enemy)
-    scene2.layers[1].append(player)
-    scene2.layers[1].append(enemy)
-    scenemanager = SceneManager(co.add_event, {"1": scene1, "2": scene2}, "1")
+    scene = mapgen.generate_random_battle_ground([Skeleton])
+    scenemanager = SceneManager(co.add_event, {"battleground": scene}, "battleground")
     resoucemanager = ResourceManager(co.add_event)
-    # scene1.layers[1] = []
 
     while True:
         co.window.fill("black")  # 全屏涂黑
