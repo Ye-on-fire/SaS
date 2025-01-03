@@ -58,6 +58,10 @@ class BattleCode(_IntEnum):
     ENEMYATTACK = get_unused_event_code()
 
 
+class ResourceCode(_IntEnum):
+    CHANGEMONEY = get_unused_event_code()
+
+
 class TempTestCode(_IntEnum):
     MOVE = get_unused_event_code()
 

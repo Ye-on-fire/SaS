@@ -748,3 +748,14 @@ class SceneManager(ListenerLike):
     @listening(c.SceneEventCode.RESTART)
     def restart_scene(self, event):
         self.__scene_list[event.body["scene_name"]] = event.body["pre_loaded_scene"]
+
+
+class ResourceManager(ListenerLike):
+    def __init__(self, post_api):
+        super.__init__(post_api=post_api)
+        self.money = 0
+
+    @listening(c.ResourceCode.CHANGEMONEY)
+    def change_money(self, event):
+        self.money += event.body["money"]
+        print(self.money)
