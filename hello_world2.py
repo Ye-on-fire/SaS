@@ -6,6 +6,7 @@ import game_constants as c
 from game_collections import (
     EventLike,
     Core,
+    generate_imageset,
     listening,
     EntityLike,
     GroupLike,
@@ -14,6 +15,7 @@ from game_collections import (
     AnimatedSprite,
     generate_imageset_for_mac,
     Player,
+    Enemy,
     Tile,
     SceneManager,
 )
@@ -23,6 +25,10 @@ import pygame
 if __name__ == "__main__":
     co = Core()
     player = Player(post_api=co.add_event)
+    enemy = Enemy(
+        post_api=co.add_event, imageset=generate_imageset("./assets/skeleton/")
+    )
+    enemy.rect.move_ip((300, 500))
     scene1 = SceneLike(core=co, name="1", player=player)
     scene1.load_tilemap("./maps/1.json")
     scene1.add_listener(player)
@@ -30,7 +36,9 @@ if __name__ == "__main__":
     scene2 = SceneLike(core=co, name="2", player=player)
     scene2.load_tilemap("./maps/2.json")
     scene2.add_listener(player)
+    scene2.add_listener(enemy)
     scene2.layers[1].append(player)
+    scene2.layers[1].append(enemy)
     scenemanager = SceneManager(co.add_event, {"1": scene1, "2": scene2}, "1")
     # scene1.layers[1] = []
 
