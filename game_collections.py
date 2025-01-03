@@ -2,7 +2,7 @@ from dis import pretty_flags
 from hmac import new
 import json
 from pdb import post_mortem
-from tarfile import data_filter
+import utils
 from typing import (
     List,
     Dict,
@@ -127,12 +127,22 @@ class EntityLike(ListenerLike, pygame.sprite.Sprite):
                 镜头坐标（/负偏移量）
         """
         body: c.DrawEventBody = event.body
-        window: pygame.Surface = body["window"]
-        camera: Tuple[int, int] = body["camera"]
+        surface: pygame.Surface = body["window"]
+        offset: Tuple[int, int] = body["camera"]
 
-        rect = self.rect.move(*(-i for i in camera))
+        rect = self.rect.move(*(-i for i in offset))
         if self.image is not None:
-            window.blit(self.image, rect)
+            surface.blit(self.image, rect)
+        if c.DEBUG and self.__class__.__name__ != "Tile":
+            RED = (255, 0, 0)
+            # rect
+            pygame.draw.rect(surface, RED, rect, width=1)
+            pygame.draw.line(surface, RED, rect.topleft, offset, width=1)
+            # font
+            text_rect: pygame.Rect = rect.copy()
+            text_rect.topleft = rect.bottomleft
+            text_surface = utils.debug_text(f"{self.rect.topleft+self.rect.size}")
+            surface.blit(text_surface, text_rect)
 
 
 def generate_imageset(path):
@@ -335,123 +345,6 @@ class AnimatedSprite(EntityLike):
             self.__anim_loop_count = 0
         self.image = self.__current_anim[self.__direction][self.__frame]
         self.__frame_duration_count += 1
-
-
-class Player(AnimatedSprite):
-    """
-    游戏角色类，包含对角色移动，动作，动画的控制
-    """
-
-    def __init__(self, post_api):
-        if c.PLATFORM == "Darwin":
-            imageset = generate_imageset_for_mac("./assets/player/")
-        else:
-            imageset = generate_imageset("./assets/player/")
-        image = imageset["idle"][0][0]
-        super().__init__(image=image, imageset=imageset, post_api=post_api)
-        self.rect.center = (500, 500)
-        self.hp = 100
-        self.damage = 10
-
-    @listening(c.MoveEventCode.PREMOVE)
-    def try_move(self, event):
-        state = State.create_run()
-        self.change_state(state)
-        keys = pygame.key.get_pressed()
-        move_offset = pygame.Vector2(0, 0)
-        if self.state.info["can_move"]:
-            if keys[pygame.K_a]:
-                self.faceing = 1
-                move_offset.x -= 5
-            if keys[pygame.K_d]:
-                self.faceing = 0
-                move_offset.x += 5
-            if keys[pygame.K_w]:
-                move_offset.y -= 5
-            if keys[pygame.K_s]:
-                move_offset.y += 5
-        self.post(
-            EventLike(
-                c.MoveEventCode.MOVEATTEMPT,
-                sender=self.uuid,
-                body={"move_offset": move_offset, "original_pos": self.rect.copy()},
-            )
-        )
-
-    @listening(c.MoveEventCode.MOVEALLOW)
-    def move(self, event):
-        self.rect = event.body["pos"]
-        self.post(EventLike(c.MoveEventCode.MOVECAMERA, body={"chara": self}))
-
-    @listening(pygame.KEYDOWN)
-    def behavior(self, event):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_j]:
-            self.change_state(State.create_attack())
-        elif keys[pygame.K_SPACE]:
-            self.change_state(State.create_roll())
-
-    @listening(c.EventCode.STEP)
-    def step(self, event):
-        if "frame_type" in self.state.info.keys():
-            if self.state.info["frame_type"][self.current_frame] == 2:
-                print("invincible")
-            if (
-                self.state.info["frame_type"][self.current_frame] == 1
-                and self.first_frame
-            ):
-                self.first_frame = False
-                if self.faceing == 0:
-                    attack_rect = pygame.Rect(
-                        self.rect.centerx,
-                        self.rect.centery - self.rect.height // 2,
-                        50,
-                        100,
-                    )
-                else:
-                    attack_rect = pygame.Rect(
-                        self.rect.centerx - 50,
-                        self.rect.centery - self.rect.height // 2,
-                        50,
-                        100,
-                    )
-                self.post(
-                    EventLike(
-                        c.BattleCode.PLAYERATTACK,
-                        sender=self.uuid,
-                        body={"rect": attack_rect, "damage": self.damage},
-                    )
-                )
-
-
-class Enemy(AnimatedSprite):
-    def __init__(
-        self,
-        imageset,
-        state: State = State.create_idle(),
-        direction=0,
-        post_api=None,
-        hp=10,
-        damage=10,
-        money_drop=10,
-    ):
-        image = imageset["idle"][0][0]
-        super().__init__(imageset, image, state, direction, post_api)
-        self.hp = hp
-        self.damage = damage
-        self.money_drop = money_drop
-
-    @listening(c.BattleCode.PLAYERATTACK)
-    def take_damage(self, event):
-        print("into")
-        if self.rect.colliderect(event.body["rect"]):
-            self.hp -= event.body["damage"]
-            print(self.hp)
-        if self.hp <= 0:
-            self.change_state(State.create_die())
-            self.post(
-                EventLike(c.ResourceCode.CHANGEMONEY, body={"money": self.money_drop})
-            )
 
 
 class Tile(EntityLike):
@@ -743,6 +636,128 @@ class SceneLike(GroupLike):
     @listening(pygame.QUIT)
     def quit_game(self, event):
         Core.exit()
+
+
+class TextEntity(EntityLike):
+    """
+    文字框 (左上对齐)
+
+    Methods
+    ---
+    set_text(self, text: str = "") -> None
+        设置文本框文本
+    get_zh_font(font_size: int, *, bold=False, italic=False) -> pygame.font.Font
+        获取支持中文的字体, 如果系统中没有找到支持的字体, 则返回pygame默认字体。
+
+    Attributes
+    ---
+    font : pygame.font.Font
+        字体 (含字号)
+    font_color : ColorValue
+        字体颜色
+    back_ground : ColorValue
+        背景颜色
+    """
+
+    # Attributes
+    font: pygame.font.Font
+    font_color: c.ColorValue
+    back_ground: c.ColorValue
+
+    @staticmethod
+    def get_zh_font(font_size: int, *, bold=False, italic=False) -> pygame.font.Font:
+        """
+        获取支持中文的字体, 如果系统中没有找到支持的字体, 则返回pygame默认字体。
+
+        Parameters
+        ---
+        font_size : int
+            字号
+        bold : bool, default = False
+            加粗 (仅当在系统中找到支持中文字体时生效)
+        italic : bool, default = False
+            斜体 (仅当在系统中找到支持中文字体时生效)
+
+        Notes
+        ---
+        中文字体查找顺序
+        SimHei, microsoftyahei, notosanscjk
+        """
+        available_fonts = pygame.font.get_fonts()
+        font_name = None
+        for i in ["microsoftyahei", "SimHei", "notosanscjk"]:
+            if i not in available_fonts:
+                continue
+            font_name = i
+            break
+
+        if font_name is None:
+            return pygame.font.Font(None, font_size)
+        return pygame.font.SysFont(font_name, font_size, bold, italic)
+
+    def __init__(
+        self,
+        rect: pygame.Rect,
+        *,
+        font: pygame.font.Font = None,
+        font_color: c.ColorValue = (255, 255, 255),
+        back_ground: c.ColorValue = (0, 0, 0, 0),
+        text: str = "",
+        dynamic_size: bool = False,
+    ):
+        """
+        Parameters
+        ---
+        rect : pygame.Rect
+            文本框
+        font : pygame.font.Font, default = None
+            字体
+        font_color : ColorValue, default  = (255, 255, 255)
+            字体颜色
+        back_ground : ColorValue, default  = (0, 0, 0, 0)
+            背景颜色
+        text : str = ""
+            文字
+        dynamic_size : bool, default = False
+            是否在设置文字时, 自动重新更新文本框大小
+        """
+        super().__init__(rect)
+        self.font: pygame.font.Font = font if font is not None else self.get_zh_font()
+        self.font_color: c.ColorValue = font_color
+        self.back_ground: c.ColorValue = back_ground
+        self.dynamic_size: bool = dynamic_size
+        self.set_text(text)
+
+    def set_text(self, text: str = "") -> None:
+        """
+        设置文本框文本
+
+        Notes
+        ---
+        当`self.dynamic_size`为True时, 会自动更新文本框大小
+        """
+        # ===几何计算
+        line_width_list: list[int] = []
+        line_offset_list: list[int] = []
+        current_offset: int = 0
+        for line in text.splitlines():
+            line_offset_list.append(current_offset)
+            line_width, line_height = self.font.size(line)
+            current_offset += line_height
+            line_width_list.append(line_width)
+        max_width = max(line_width_list) if line_width_list else 0
+        # ===resize
+        if self.dynamic_size:
+            self.rect.size = (max_width, current_offset)
+        # ===文本框背景
+        text_surface = pygame.Surface(self.rect.size, pygame.SRCALPHA)
+        text_surface.fill(self.back_ground)
+        # ===绘制文本
+        for line, offset in zip(text.splitlines(), line_offset_list):
+            text_surface.blit(
+                self.font.render(line, True, self.font_color), (0, offset)
+            )
+        self.image = text_surface
 
 
 class SceneManager(ListenerLike):

@@ -15,11 +15,10 @@ from game_collections import (
     State,
     AnimatedSprite,
     generate_imageset_for_mac,
-    Player,
-    Enemy,
     Tile,
     SceneManager,
 )
+from game_objects import Player, Enemy
 
 import pygame
 

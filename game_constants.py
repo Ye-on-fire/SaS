@@ -8,6 +8,16 @@ from base.constants import *
 
 PLATFORM = system()
 
+DEBUG = True
+RGBAOutput = _typing.Tuple[int, int, int, int]
+ColorValue = _typing.Union[
+    _pygame.Color,
+    int,
+    str,
+    _typing.Tuple[int, int, int],
+    RGBAOutput,
+    _typing.Sequence[int],
+]
 if _typing.TYPE_CHECKING:
     from game_collections import SceneLike
 
