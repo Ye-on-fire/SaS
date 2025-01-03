@@ -6,6 +6,7 @@ import game_constants as c
 from game_collections import (
     EventLike,
     Core,
+    ResourceManager,
     generate_imageset,
     listening,
     EntityLike,
@@ -40,6 +41,7 @@ if __name__ == "__main__":
     scene2.layers[1].append(player)
     scene2.layers[1].append(enemy)
     scenemanager = SceneManager(co.add_event, {"1": scene1, "2": scene2}, "1")
+    resoucemanager = ResourceManager(co.add_event)
     # scene1.layers[1] = []
 
     while True:
@@ -69,6 +71,7 @@ if __name__ == "__main__":
             co.add_event(e)
         co.add_event(EventLike.anim_step_event(co.time_ms))
         for event in co.yield_events():
+            resoucemanager.listen(event)
             scenemanager.listen(event)
             scenemanager.current_scene.listen(event)
         co.flip()  # 更新屏幕缓冲区

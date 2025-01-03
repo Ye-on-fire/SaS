@@ -431,13 +431,15 @@ class Enemy(AnimatedSprite):
         state: State = State.create_idle(),
         direction=0,
         post_api=None,
-        hp=100,
+        hp=10,
         damage=10,
+        money_drop=10,
     ):
         image = imageset["idle"][0][0]
         super().__init__(imageset, image, state, direction, post_api)
         self.hp = hp
         self.damage = damage
+        self.money_drop = money_drop
 
     @listening(c.BattleCode.PLAYERATTACK)
     def take_damage(self, event):
@@ -447,6 +449,9 @@ class Enemy(AnimatedSprite):
             print(self.hp)
         if self.hp <= 0:
             self.change_state(State.create_die())
+            self.post(
+                EventLike(c.ResourceCode.CHANGEMONEY, body={"money": self.money_drop})
+            )
 
 
 class Tile(EntityLike):
@@ -741,6 +746,7 @@ class SceneLike(GroupLike):
 
 
 class SceneManager(ListenerLike):
+    # 用来管理场景和切换场景
     def __init__(self, post_api, scenelist, inital_scene_name):
         super().__init__(post_api=post_api)
         self.__scene_list = scenelist
@@ -765,8 +771,9 @@ class SceneManager(ListenerLike):
 
 
 class ResourceManager(ListenerLike):
+    # 用来管理全局属性
     def __init__(self, post_api):
-        super.__init__(post_api=post_api)
+        super().__init__(post_api=post_api)
         self.money = 0
 
     @listening(c.ResourceCode.CHANGEMONEY)
