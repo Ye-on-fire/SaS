@@ -826,6 +826,8 @@ class SceneManager(ListenerLike):
     @listening(c.SceneEventCode.RESTART)
     def restart_scene(self, event):
         self.__scene_list[event.body["scene_name"]] = event.body["pre_loaded_scene"]
+        # self.current_scene.update_camera_by_chara(self.current_scene.player)
+        self.current_scene = self.__scene_list[event.body["scene_name"]]
 
 
 class ResourceManager(ListenerLike):

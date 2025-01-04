@@ -55,8 +55,13 @@ if __name__ == "__main__":
         elif ckeys[pygame.K_o]:
             co.add_event(
                 EventLike(
-                    c.SceneEventCode.CHANGE_SCENE,
-                    body={"scene_name": "2", "playerpos": (800, 500)},
+                    c.SceneEventCode.RESTART,
+                    body={
+                        "scene_name": "battleground",
+                        "pre_loaded_scene": mapgen.generate_random_battle_ground(
+                            [Skeleton]
+                        ),
+                    },
                 )
             )
         else:

@@ -121,7 +121,7 @@ class MapGenerator(ListenerLike):
                 randint(60, scene.map_height - 60),
             )
             scene.add_listener(enemy)
-            scene.layers[2].append(
+            scene.layers[3].append(
                 enemy
             )  # 说明地图在一层，障碍在二层，怪在三层，player在四层
         self.player.rect.centerx = scene.map_width // 2
