@@ -837,4 +837,4 @@ class ResourceManager(ListenerLike):
     @listening(c.ResourceCode.CHANGEMONEY)
     def change_money(self, event):
         self.money += event.body["money"]
-        print(self.money)
+        print("current_money:%d" % self.money)

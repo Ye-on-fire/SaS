@@ -47,7 +47,7 @@ class MapGenerator(ListenerLike):
         self.__path = new_path
         self.__floors = os.listdir(os.path.join(new_path, "floors/"))
         self.__walls = os.listdir(os.path.join(new_path, "walls/"))
-        self.__obstacles = os.listdir(os.path.join(path, "obstacles/"))
+        self.__obstacles = os.listdir(os.path.join(new_path, "obstacles/"))
 
     def generate_random_battle_ground(self, enemy_list: list):
         scene = SceneLike(
@@ -61,6 +61,7 @@ class MapGenerator(ListenerLike):
         )
         for i in range(self.width):
             for j in range(self.height):
+                print("generating", i, j)
                 if i == 0 or j == 0 or i == self.width - 1 or j == self.height - 1:
                     image = pygame.image.load(
                         os.path.join(self.__path, "walls/", choice(self.__walls))
@@ -107,8 +108,8 @@ class MapGenerator(ListenerLike):
                 image=image, rect=image.get_rect(), post_api=self.core.add_event
             )
             obstacle.rect.move_ip(
-                randint(300, scene.map_width - 200),
-                randint(300, scene.map_height - 200),
+                randint(60, scene.map_width - 60),
+                randint(60, scene.map_height - 60),
             )
             scene.add_listener(obstacle)
             scene.walls.append(obstacle)
@@ -116,8 +117,8 @@ class MapGenerator(ListenerLike):
         for i in range(self.enemy_amount):
             enemy = choice(enemy_list).create_self(self.core.add_event)
             enemy.rect.move_ip(
-                randint(300, scene.map_width - 200),
-                randint(300, scene.map_height - 200),
+                randint(60, scene.map_width - 60),
+                randint(60, scene.map_height - 60),
             )
             scene.add_listener(enemy)
             scene.layers[2].append(

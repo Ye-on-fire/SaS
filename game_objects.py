@@ -182,7 +182,6 @@ class Skeleton(AnimatedSprite):
 
     @listening(c.BattleCode.PLAYERATTACK)
     def take_damage(self, event):
-        print("into")
         if self.rect.colliderect(event.body["rect"]):
             self.hp -= event.body["damage"]
             print(self.hp)

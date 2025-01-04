@@ -28,14 +28,14 @@ if __name__ == "__main__":
     co = Core()
     player = Player(post_api=co.add_event)
     mapgen = MapGenerator(
-        width=30,
+        width=50,
         height=40,
         scale=3,
         path="./assets/mytiles/grassland/",
         core=co,
         player=player,
-        enemy_amount=3,
-        obstacle_amount=4,
+        enemy_amount=10,
+        obstacle_amount=1,
     )
     scene = mapgen.generate_random_battle_ground([Skeleton])
     scenemanager = SceneManager(co.add_event, {"battleground": scene}, "battleground")
