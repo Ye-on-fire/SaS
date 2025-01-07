@@ -115,6 +115,7 @@ class Player(AnimatedSprite):
                 and self.state.info["frame_type"][self.current_frame] == 2
             ):
                 self.hp -= event.body["damage"]
+                self.change_state(State.create_hit())
                 print(f"player_hp:{self.hp}")
 
     @listening(c.EventCode.STEP)
@@ -237,6 +238,8 @@ class Enemy(AnimatedSprite):
             self.post(
                 EventLike(c.ResourceCode.CHANGEMONEY, body={"money": self.money_drop})
             )
+        else:
+            self.change_state(State.create_hit())
 
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):

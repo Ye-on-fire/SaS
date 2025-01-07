@@ -266,8 +266,14 @@ class State:
             loop_flag=False,
             duration=3,
             death_flag=True,
+            prior_flag=True,
             info=info,
         )
+
+    @classmethod
+    def create_hit(cls):
+        info = {"can_move": False}
+        return cls("hit", change_flag=False, duration=3, loop_flag=False, info=info)
 
     def __eq__(self, other):
         return self.name == other.name
