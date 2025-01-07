@@ -40,6 +40,30 @@ class Player(AnimatedSprite):
         self.damage = 10
         self.attack_range = [150, 114]
 
+    def _on_frame_begin(self):
+        if self.state.name == "attack":
+            if self.state.info["frame_type"][self.current_frame] == 1:
+                # self.first_frame = False
+                if self.faceing == 0:  # 设定攻击的范围
+                    attack_rect = pygame.Rect(
+                        self.rect.centerx,
+                        self.rect.centery - self.rect.height // 2,
+                        *self.attack_range,
+                    )
+                else:
+                    attack_rect = pygame.Rect(
+                        self.rect.centerx - self.attack_range[0],
+                        self.rect.centery - self.rect.height // 2,
+                        *self.attack_range,
+                    )
+                self.post(
+                    EventLike(
+                        c.BattleCode.PLAYERATTACK,
+                        sender=self.uuid,
+                        body={"rect": attack_rect, "damage": self.damage},
+                    )
+                )
+
     @listening(c.MoveEventCode.PREMOVE)
     def try_move(self, event):
         state = State.create_run()
@@ -83,30 +107,31 @@ class Player(AnimatedSprite):
         if "frame_type" in self.state.info.keys():
             if self.state.info["frame_type"][self.current_frame] == 2:
                 print("invincible")
-            if (
-                self.state.info["frame_type"][self.current_frame] == 1
-                and self.first_frame
-            ):
-                self.first_frame = False
-                if self.faceing == 0:  # 设定攻击的范围
-                    attack_rect = pygame.Rect(
-                        self.rect.centerx,
-                        self.rect.centery - self.rect.height // 2,
-                        *self.attack_range,
-                    )
-                else:
-                    attack_rect = pygame.Rect(
-                        self.rect.centerx - self.attack_range[0],
-                        self.rect.centery - self.rect.height // 2,
-                        *self.attack_range,
-                    )
-                self.post(
-                    EventLike(
-                        c.BattleCode.PLAYERATTACK,
-                        sender=self.uuid,
-                        body={"rect": attack_rect, "damage": self.damage},
-                    )
-                )
+            # if (
+            #     self.state.info["frame_type"][self.current_frame] == 1
+            #     and self.first_frame
+            # ):
+            #     self.first_frame = False
+            #     if self.faceing == 0:  # 设定攻击的范围
+            #         attack_rect = pygame.Rect(
+            #             self.rect.centerx,
+            #             self.rect.centery - self.rect.height // 2,
+            #             *self.attack_range,
+            #         )
+            #     else:
+            #         attack_rect = pygame.Rect(
+            #             self.rect.centerx - self.attack_range[0],
+            #             self.rect.centery - self.rect.height // 2,
+            #             *self.attack_range,
+            #         )
+            #     self.post(
+            #         EventLike(
+            #             c.BattleCode.PLAYERATTACK,
+            #             sender=self.uuid,
+            #             body={"rect": attack_rect, "damage": self.damage},
+            #         )
+            #     )
+            #
 
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):
@@ -175,6 +200,10 @@ class Skeleton(AnimatedSprite):
         self.hp = hp
         self.damage = damage
         self.money_drop = money_drop
+
+    def _on_loop_end(self):
+        if self.state.death_flag:
+            self.post(EventLike(c.EventCode.KILL, body={"suicide": self.uuid}))
 
     @classmethod
     def create_self(cls, post_api):

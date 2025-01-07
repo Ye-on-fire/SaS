@@ -341,22 +341,36 @@ class AnimatedSprite(EntityLike):
             self.__frame_duration_count = 0
             self.__anim_loop_count = 0
 
+    def _on_frame_begin(self):
+        """
+        用来在子类中增加在每一动画帧开始时要做的事件
+        """
+        pass
+
+    def _on_loop_end(self):
+        """
+        用来在不循环的动画结束时做的事情
+        """
+        pass
+
     @listening(c.EventCode.ANIMSTEP)
     def anim_step(self, event):
         if (
             self.__frame_duration_count % self.state.duration == 0
             and self.__frame_duration_count != 0
         ):
+            self._on_frame_begin()
             self.__frame_duration_count = 0
             self.__frame += 1
-            self.first_frame = True
+            # self.first_frame = True
         if self.__frame % len(self.__current_anim[0]) == 0 and self.__frame != 0:
             self.__frame = 0
             self.__anim_loop_count += 1
         if self.__anim_loop_count == 1 and not self.state.is_loop:
             self.state.can_be_changed = True
-            if self.state.death_flag:
-                self.post(EventLike(c.EventCode.KILL, body={"suicide": self.uuid}))
+            # if self.state.death_flag:
+            #     self.post(EventLike(c.EventCode.KILL, body={"suicide": self.uuid}))
+            self._on_loop_end()
             self.change_state(State.create_idle())
         if self.__anim_loop_count >= 999:
             self.__anim_loop_count = 0
