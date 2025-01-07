@@ -34,8 +34,8 @@ if __name__ == "__main__":
         path="./assets/mytiles/grassland/",
         core=co,
         player=player,
-        enemy_amount=10,
-        obstacle_amount=1,
+        enemy_amount=1,
+        obstacle_amount=5,
     )
     scene = mapgen.generate_random_battle_ground([Skeleton])
     scenemanager = SceneManager(co.add_event, {"battleground": scene}, "battleground")
@@ -69,12 +69,12 @@ if __name__ == "__main__":
                 c.StateEventCode.CHANGE_STATE,
                 prior=100,
                 body={"state": State.create_idle()},
+                receivers=set([player.uuid]),
             )
             co.add_event(e)
-        co.add_event(EventLike.anim_step_event(co.time_ms))
+        co.add_event(EventLike.anim_step_event(co.tick()))
         for event in co.yield_events():
             resoucemanager.listen(event)
             scenemanager.listen(event)
-            scenemanager.current_scene.listen(event)
         co.flip()  # 更新屏幕缓冲区
         co.tick(60)

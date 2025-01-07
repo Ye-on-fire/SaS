@@ -17,6 +17,7 @@ import collections
 import pygame
 from loguru import logger
 
+from utils import *
 import os
 import game_constants as c
 from base import (
@@ -244,14 +245,28 @@ class State:
         return cls("attack", change_flag=False, loop_flag=False, duration=5, info=info)
 
     @classmethod
+    def create_skeletion_attack(cls):
+        info = {
+            "frame_type": [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "can_move": False,
+        }
+        return cls("attack", change_flag=False, loop_flag=False, duration=3, info=info)
+
+    @classmethod
     def create_roll(cls):
         info = {"frame_type": [0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0], "can_move": True}
         return cls("roll", change_flag=False, loop_flag=False, duration=3, info=info)
 
     @classmethod
     def create_die(cls):
+        info = {"can_move": False}
         return cls(
-            "die", change_flag=False, loop_flag=False, duration=3, death_flag=True
+            "die",
+            change_flag=False,
+            loop_flag=False,
+            duration=3,
+            death_flag=True,
+            info=info,
         )
 
     def __eq__(self, other):
@@ -368,8 +383,6 @@ class AnimatedSprite(EntityLike):
             self.__anim_loop_count += 1
         if self.__anim_loop_count == 1 and not self.state.is_loop:
             self.state.can_be_changed = True
-            # if self.state.death_flag:
-            #     self.post(EventLike(c.EventCode.KILL, body={"suicide": self.uuid}))
             self._on_loop_end()
             self.change_state(State.create_idle())
         if self.__anim_loop_count >= 999:
@@ -642,6 +655,67 @@ class SceneLike(GroupLike):
             )
         )
 
+    @listening(c.CollisionEventCode.ENEMY_MOVE_ATTEMPT)
+    def judge_enemy_move(self, event):
+        if (
+            event.body["original_pos"]
+            .move(event.body["move_offset"])
+            .colliderect(event.body["player_rect"])
+        ):
+            return
+        can_move_horizental = True  # 可垂直移动
+        can_move_vertical = True  # 可水平移动
+        new_rect = event.body["original_pos"].copy()
+        rect_add_x_offset = event.body["original_pos"].move(
+            (event.body["move_offset"].x, 0)
+        )
+        rect_add_y_offset = event.body["original_pos"].move(
+            (0, event.body["move_offset"].y)
+        )
+        for wall in self.walls:
+            if wall.rect.colliderect(rect_add_x_offset):
+                can_move_horizental = False
+                break
+        for wall in self.walls:
+            if wall.rect.colliderect(rect_add_y_offset):
+                can_move_vertical = False
+                break
+        if can_move_horizental:
+            new_rect.x += event.body["move_offset"].x
+        else:
+            new_rect.x += event.body["velocity"] * -sign(event.body["move_offset"].x)
+        if can_move_vertical:
+            new_rect.y += event.body["move_offset"].y
+        else:
+            new_rect.y += event.body["velocity"] * -sign(event.body["move_offset"].y)
+        self.post(
+            EventLike(
+                c.CollisionEventCode.ENEMY_MOVE_ALLOW,
+                receivers=set([event.sender]),
+                body={"pos": new_rect},
+            )
+        )
+
+    @listening(c.CollisionEventCode.ENEMY_MOVE_ATTEMPT_WANDER)
+    def judge_wander(self, event):
+        for wall in self.walls:
+            if wall.rect.colliderect(event.body["rect"]):
+                self.post(
+                    EventLike(
+                        c.CollisionEventCode.ENEMY_MOVE_ATTEMPT_WANDER_ALLOW,
+                        receivers=set([event.sender]),
+                        body={"can_move": False},
+                    )
+                )
+                return
+        self.post(
+            EventLike(
+                c.CollisionEventCode.ENEMY_MOVE_ATTEMPT_WANDER_ALLOW,
+                receivers=set([event.sender]),
+                body={"can_move": True, "rect": event.body["rect"]},
+            )
+        )
+
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):
         """
@@ -827,6 +901,10 @@ class SceneManager(ListenerLike):
     def add_scene(self, scene: SceneLike):
         self.__scene_list[scene.name] = scene
 
+    def listen(self, event):
+        super().listen(event)
+        self.current_scene.listen(event)
+
     @listening(c.SceneEventCode.CHANGE_SCENE)
     def change_scene(self, event):
         if event.body["scene_name"] in self.__scene_list.keys():
@@ -849,6 +927,7 @@ class ResourceManager(ListenerLike):
     def __init__(self, post_api):
         super().__init__(post_api=post_api)
         self.money = 0
+        self.difficulty = 1
 
     @listening(c.ResourceCode.CHANGEMONEY)
     def change_money(self, event):

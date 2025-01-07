@@ -120,6 +120,7 @@ class MapGenerator(ListenerLike):
                 randint(60, scene.map_width - 60),
                 randint(60, scene.map_height - 60),
             )
+            enemy.target = self.player
             scene.add_listener(enemy)
             scene.layers[3].append(
                 enemy

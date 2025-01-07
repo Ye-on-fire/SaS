@@ -41,6 +41,10 @@ class CollisionEventCode(_IntEnum):
     COLLISION_EVENT = get_unused_event_code()
     MOVE_ATTEMPT = get_unused_event_code()
     MOVE_ALLOW = get_unused_event_code()
+    ENEMY_MOVE_ATTEMPT = get_unused_event_code()
+    ENEMY_MOVE_ATTEMPT_WANDER = get_unused_event_code()
+    ENEMY_MOVE_ALLOW = get_unused_event_code()
+    ENEMY_MOVE_ATTEMPT_WANDER_ALLOW = get_unused_event_code()
     HAVE_VOLUME = (
         get_unused_event_code()
     )  # if a entiry listening this code, means that entity have collision volumn.
