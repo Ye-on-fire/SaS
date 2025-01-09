@@ -727,6 +727,11 @@ class SceneLike(GroupLike):
             )
         )
 
+    @listening(c.EventCode.STEP)
+    def step(self, event):
+        if len(self.layers[3]) == 0:
+            self.post(EventLike(c.SceneEventCode.DOOR_OPEN))
+
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):
         """
@@ -933,43 +938,12 @@ class TextEntity(EntityLike):
         #
 
 
-class SceneManager(ListenerLike):
-    # 用来管理场景和切换场景
-    def __init__(self, post_api, scenelist, inital_scene_name):
-        super().__init__(post_api=post_api)
-        self.__scene_list = scenelist
-        self.current_scene = self.__scene_list[inital_scene_name]
-
-    def add_scene(self, scene: SceneLike):
-        self.__scene_list[scene.name] = scene
-
-    def listen(self, event):
-        super().listen(event)
-        self.current_scene.listen(event)
-
-    @listening(c.SceneEventCode.CHANGE_SCENE)
-    def change_scene(self, event):
-        if event.body["scene_name"] in self.__scene_list.keys():
-            self.current_scene = self.__scene_list[event.body["scene_name"]]
-            self.current_scene.player.rect.x = event.body["playerpos"][0]
-            self.current_scene.player.rect.y = event.body["playerpos"][1]
-            self.current_scene.update_camera_by_chara(self.current_scene.player)
-        else:
-            print("no such scene")
-
-    @listening(c.SceneEventCode.RESTART)
-    def restart_scene(self, event):
-        self.__scene_list[event.body["scene_name"]] = event.body["pre_loaded_scene"]
-        # self.current_scene.update_camera_by_chara(self.current_scene.player)
-        self.current_scene = self.__scene_list[event.body["scene_name"]]
-
-
 class ResourceManager(ListenerLike):
     # 用来管理全局属性
     def __init__(self, post_api):
         super().__init__(post_api=post_api)
         self.money = 0
-        self.difficulty = 1
+        self.level = 1
 
     @listening(c.ResourceCode.CHANGEMONEY)
     def change_money(self, event):

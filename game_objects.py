@@ -48,7 +48,7 @@ class Player(AnimatedSprite):
         # 单位秒
         self.sp_recover_cooling_time = 1
         self.sp_recover_speed = 0.7
-        self.damage = 10
+        self.damage = 100
         self.attack_range = [150, 114]
         self.in_dialog = False
 
@@ -123,6 +123,14 @@ class Player(AnimatedSprite):
                 self.sp -= 10
                 self.sp_recover_count_down_start = time.time()
                 self.change_state(State.create_roll())
+            # 回身斩
+            elif (
+                keys[pygame.K_k] and self.sp > 0 and self.state.name in ("run", "idle")
+            ):
+                self.sp -= 30
+                self.sp_recover_count_down_start = time.time()
+                self.faceing ^= 1
+                self.change_state(State.create_attack())
 
     @listening(c.BattleCode.ENEMYATTACK)
     def take_damage(self, event):

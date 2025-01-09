@@ -17,7 +17,6 @@ from game_collections import (
     AnimatedSprite,
     generate_imageset_for_mac,
     Tile,
-    SceneManager,
 )
 from game_objects import Player, Skeleton
 from scenes import *
@@ -37,8 +36,6 @@ if __name__ == "__main__":
         path="./assets/mytiles/grassland/",
         core=co,
         player=player,
-        enemy_amount=5,
-        obstacle_amount=5,
     )
     scene = Home(co, post_api=co.add_event, player=player)
     # scene.add_listener(player, 3)
@@ -46,7 +43,7 @@ if __name__ == "__main__":
         npc,
         3,
     )
-    scenemanager = SceneManager(co.add_event, {"home": scene}, "home")
+    scenemanager = SceneManager(co.add_event, {"home": scene}, "home", mapgen)
     resoucemanager = ResourceManager(co.add_event)
 
     while True:

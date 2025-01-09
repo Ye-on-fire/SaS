@@ -59,8 +59,10 @@ class CollisionEventCode(_IntEnum):
 
 class SceneEventCode(_IntEnum):
     CHANGE_SCENE = get_unused_event_code()
+    NEW_LEVEL = get_unused_event_code()
     TELEPORT = get_unused_event_code()
     RESTART = get_unused_event_code()
+    DOOR_OPEN = get_unused_event_code()
 
 
 class StateEventCode(_IntEnum):
