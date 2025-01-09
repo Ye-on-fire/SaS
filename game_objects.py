@@ -1,4 +1,5 @@
 import collections
+from pydoc import plain
 from random import randint, choice
 import time
 from turtle import listen, width
@@ -33,10 +34,7 @@ class Player(AnimatedSprite):
     """
 
     def __init__(self, post_api):
-        if c.PLATFORM == "Darwin":
-            imageset = generate_imageset_for_mac("./assets/player/")
-        else:
-            imageset = generate_imageset("./assets/player/")
+        imageset = generate_imageset("./assets/player/")
         image = imageset["idle"][0][0]
         super().__init__(image=image, imageset=imageset, post_api=post_api)
         self.rect = pygame.Rect(0, 0, 63, 114)  # width 21*3 height 38*3
@@ -44,6 +42,7 @@ class Player(AnimatedSprite):
         self.hp = 200
         self.damage = 10
         self.attack_range = [150, 114]
+        self.in_dialog = False
 
     def _on_frame_begin(self):
         if self.state.name == "attack":
@@ -71,28 +70,29 @@ class Player(AnimatedSprite):
 
     @listening(c.MoveEventCode.PREMOVE)
     def try_move(self, event):
-        state = State.create_run()
-        self.change_state(state)
-        keys = pygame.key.get_pressed()
-        move_offset = pygame.Vector2(0, 0)
-        if self.state.info["can_move"]:
-            if keys[pygame.K_a]:
-                self.faceing = 1
-                move_offset.x -= 5
-            if keys[pygame.K_d]:
-                self.faceing = 0
-                move_offset.x += 5
-            if keys[pygame.K_w]:
-                move_offset.y -= 5
-            if keys[pygame.K_s]:
-                move_offset.y += 5
-        self.post(
-            EventLike(
-                c.MoveEventCode.MOVEATTEMPT,
-                sender=self.uuid,
-                body={"move_offset": move_offset, "original_pos": self.rect.copy()},
+        if not self.in_dialog:
+            state = State.create_run()
+            self.change_state(state)
+            keys = pygame.key.get_pressed()
+            move_offset = pygame.Vector2(0, 0)
+            if self.state.info["can_move"]:
+                if keys[pygame.K_a]:
+                    self.faceing = 1
+                    move_offset.x -= 5
+                if keys[pygame.K_d]:
+                    self.faceing = 0
+                    move_offset.x += 5
+                if keys[pygame.K_w]:
+                    move_offset.y -= 5
+                if keys[pygame.K_s]:
+                    move_offset.y += 5
+            self.post(
+                EventLike(
+                    c.MoveEventCode.MOVEATTEMPT,
+                    sender=self.uuid,
+                    body={"move_offset": move_offset, "original_pos": self.rect.copy()},
+                )
             )
-        )
 
     @listening(c.MoveEventCode.MOVEALLOW)
     def move(self, event):
@@ -101,11 +101,12 @@ class Player(AnimatedSprite):
 
     @listening(pygame.KEYDOWN)
     def behavior(self, event):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_j]:
-            self.change_state(State.create_attack())
-        elif keys[pygame.K_SPACE]:
-            self.change_state(State.create_roll())
+        if not self.in_dialog:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_j]:
+                self.change_state(State.create_attack())
+            elif keys[pygame.K_SPACE]:
+                self.change_state(State.create_roll())
 
     @listening(c.BattleCode.ENEMYATTACK)
     def take_damage(self, event):
@@ -117,37 +118,47 @@ class Player(AnimatedSprite):
                 self.hp -= event.body["damage"]
                 self.change_state(State.create_hit())
                 print(f"player_hp:{self.hp}")
+            else:
+                print("hit invincible")
 
-    @listening(c.EventCode.STEP)
-    def step(self, event):
-        if "frame_type" in self.state.info.keys():
-            if self.state.info["frame_type"][self.current_frame] == 2:
-                print("invincible")
-            # if (
-            #     self.state.info["frame_type"][self.current_frame] == 1
-            #     and self.first_frame
-            # ):
-            #     self.first_frame = False
-            #     if self.faceing == 0:  # 设定攻击的范围
-            #         attack_rect = pygame.Rect(
-            #             self.rect.centerx,
-            #             self.rect.centery - self.rect.height // 2,
-            #             *self.attack_range,
-            #         )
-            #     else:
-            #         attack_rect = pygame.Rect(
-            #             self.rect.centerx - self.attack_range[0],
-            #             self.rect.centery - self.rect.height // 2,
-            #             *self.attack_range,
-            #         )
-            #     self.post(
-            #         EventLike(
-            #             c.BattleCode.PLAYERATTACK,
-            #             sender=self.uuid,
-            #             body={"rect": attack_rect, "damage": self.damage},
-            #         )
-            #     )
-            #
+    @listening(c.DialogEventCode.ACTIVATE_DIALOG)
+    def a_d(self, event):
+        self.in_dialog = True
+
+    @listening(c.DialogEventCode.STOP_DIALOG)
+    def s_d(self, event):
+        self.in_dialog = False
+
+    # @listening(c.EventCode.STEP)
+    # def step(self, event):
+    #     if "frame_type" in self.state.info.keys():
+    #         if self.state.info["frame_type"][self.current_frame] == 2:
+    #             print("invincible")
+    # if (
+    #     self.state.info["frame_type"][self.current_frame] == 1
+    #     and self.first_frame
+    # ):
+    #     self.first_frame = False
+    #     if self.faceing == 0:  # 设定攻击的范围
+    #         attack_rect = pygame.Rect(
+    #             self.rect.centerx,
+    #             self.rect.centery - self.rect.height // 2,
+    #             *self.attack_range,
+    #         )
+    #     else:
+    #         attack_rect = pygame.Rect(
+    #             self.rect.centerx - self.attack_range[0],
+    #             self.rect.centery - self.rect.height // 2,
+    #             *self.attack_range,
+    #         )
+    #     self.post(
+    #         EventLike(
+    #             c.BattleCode.PLAYERATTACK,
+    #             sender=self.uuid,
+    #             body={"rect": attack_rect, "damage": self.damage},
+    #         )
+    #     )
+    #
 
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):
@@ -266,19 +277,6 @@ class Enemy(AnimatedSprite):
                 -(self.image.get_width() - rect.width),
                 -(self.image.get_height() - rect.height),
             )
-
-        # if self.faceing == 0:
-        #     attack_rect = pygame.Rect(
-        #         self.rect.centerx,
-        #         self.rect.centery - self.rect.height // 2,
-        #         *self.attack_range,
-        #     )
-        # else:
-        #     attack_rect = pygame.Rect(
-        #         self.rect.centerx - self.attack_range[0],
-        #         self.rect.centery - self.rect.height // 2,
-        #         *self.attack_range,
-        #     )
         if self.image is not None:
             surface.blit(self.image, draw_rect)
         if c.DEBUG and self.__class__.__name__ != "Tile":
@@ -339,6 +337,8 @@ class Skeleton(Enemy):
 
     @listening(c.EventCode.STEP)
     def step(self, event):
+        # if self.hp <= 0:
+        #     self.change_state(State.create_die())
         # reset attack flag
         if not self.can_attack:
             if time.time() - self.last_attack_time >= 3.0:
@@ -465,3 +465,112 @@ class Skeleton(Enemy):
                     body={"damage": self.damage, "attack_rect": self.attack_rect},
                 )
             )
+
+
+class FriendlyNpc(AnimatedSprite):
+    def __init__(
+        self,
+        target: Player,
+        post_api=None,
+    ):
+        imageset = generate_imageset("./assets/friendly_npc/")
+        image = imageset["idle"][0][0]
+        state = State.create_idle()
+        direction = 0
+        super().__init__(imageset, image, state, direction, post_api)
+        self.__dialogs = {
+            "welcome": [
+                "Hello",
+                "我是你的指引者",
+                "你需要通关这个地牢",
+                "你需要我帮你做什么",
+            ]
+        }
+        self.text_box = TextEntity(
+            pygame.Rect(640, 550, 1, 1),
+            font=TextEntity.get_zh_font(font_size=30),
+            font_color=(255, 255, 255),
+            back_ground=(0, 0, 0, 50),
+            dynamic_size=True,
+        )
+        self.target = target
+        # 默认每一个npc都有一个welcome的对话作为初始对话
+        self.dialog_activated = False
+        self.current_dialog = "welcome"
+        self.current_dialog_index = 0
+
+    def listen(self, event: EventLike) -> None:
+        super().listen(event)
+        if self.dialog_activated:
+            self.text_box.listen(event)
+
+    @property
+    def current_dialog(self):
+        return self.__current_dialog
+
+    @current_dialog.setter
+    def current_dialog(self, new_tag):
+        self.__current_dialog = new_tag
+        self.current_dialog_index = 0
+
+    @property
+    def current_dialog_index(self):
+        return self.__current_dialog_index
+
+    @current_dialog_index.setter
+    def current_dialog_index(self, new_index):
+        max_len = len(self.__dialogs[self.__current_dialog])
+        self.__current_dialog_index = new_index % max_len
+        self.text_box.set_text(
+            self.__dialogs[self.__current_dialog][self.__current_dialog_index]
+        )
+
+    @listening(c.DialogEventCode.ACTIVATE_DIALOG)
+    def activate_dialog(self, event):
+        self.dialog_activated = True
+        self.current_dialog = "welcome"
+
+    @listening(c.DialogEventCode.STOP_DIALOG)
+    def stop_dialog(self, event):
+        self.dialog_activated = False
+
+    @listening(c.EventCode.STEP)
+    def step(self, event):
+        if self.target.rect.x - self.rect.x >= 0:
+            self.faceing = 0
+        else:
+            self.faceing = 1
+
+    @listening(pygame.KEYDOWN)
+    def on_keydown(self, event):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE] and self.dialog_activated:
+            self.post(
+                EventLike(c.DialogEventCode.STOP_DIALOG, sender=self.uuid, body={})
+            )
+            return
+        if (
+            keys[pygame.K_e]
+            or keys[pygame.K_KP_ENTER]
+            or keys[pygame.K_SPACE]
+            and self.dialog_activated
+        ):
+            if self.current_dialog_index + 1 >= len(
+                self.__dialogs[self.current_dialog]
+            ):
+                self.post(
+                    EventLike(c.DialogEventCode.STOP_DIALOG, sender=self.uuid, body={})
+                )
+            else:
+                self.current_dialog_index += 1
+        # 按e交互
+        if keys[pygame.K_e] and not self.dialog_activated:
+            if dist2(self.rect, self.target.rect) <= 10000:
+                self.post(
+                    EventLike(
+                        c.DialogEventCode.ACTIVATE_DIALOG,
+                        sender=self.uuid,
+                        receivers=set([self.uuid, self.target.uuid]),
+                        body={},
+                    )
+                )

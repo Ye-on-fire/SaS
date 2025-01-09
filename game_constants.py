@@ -29,6 +29,13 @@ class CharaterType(_IntEnum):
     BOSS = get_unused_event_code()
 
 
+class DialogEventCode(_IntEnum):
+    # 激活对话，考虑npc的对话行为和停止玩家的案件侦测
+    ACTIVATE_DIALOG = get_unused_event_code()
+    # 停止对话，重新开始玩家的案件侦测
+    STOP_DIALOG = get_unused_event_code()
+
+
 class SceneCode(_IntEnum):
     START_MEUN = get_unused_event_code()
     CITY = get_unused_event_code()

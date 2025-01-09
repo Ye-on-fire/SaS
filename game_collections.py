@@ -333,11 +333,8 @@ class AnimatedSprite(EntityLike):
 
     @state.setter
     def state(self, new_state):
-        if self.__current_state.can_be_changed:
-            self.__current_state = new_state
-            self.__current_anim = self.__imageset[new_state.name]
-        else:
-            print("The current animation cant be interrputed")
+        self.__current_state = new_state
+        self.__current_anim = self.__imageset[new_state.name]
 
     @property
     def current_frame(self):
@@ -564,10 +561,18 @@ class SceneLike(GroupLike):
             chara.rect.centery - self.core.window.get_height() / 2,
         )
 
+    def add_listener(self, listener: ListenerLike, layer_id, solid=False) -> None:
+        """
+        Scenelike的添加组员方法，还能向图层中添加id
+        """
+        super().add_listener(listener)
+        self.layers[layer_id].append(listener)
+        if solid:
+            self.walls.append(listener)
+
     def load_tilemap(
         self, config_file_path, scale=3
     ):  # tilemap的数据都是以json格式储存的
-        self.layers[0] = []  # 图层的最低端都是地图
         with open(config_file_path, "r") as f:
             config = f.read()
         config = json.loads(config)  # 读取json并转换为python数据
@@ -581,9 +586,9 @@ class SceneLike(GroupLike):
                 tile = Tile(self.post_api, image)
                 tile.tile_cord = cord
                 if tiles["type"] == "wall":
-                    self.walls.append(tile)
-                self.add_listener(tile)
-                self.layers[0].append(tile)
+                    self.add_listener(tile, 0, True)
+                else:
+                    self.add_listener(tile, 0)
         print("load map complete")
 
     def __enter__(self):
@@ -895,6 +900,37 @@ class TextEntity(EntityLike):
                 self.font.render(line, True, self.font_color), (0, offset)
             )
         self.image = text_surface
+
+    @listening(c.EventCode.DRAW)
+    def draw(self, event: EventLike):
+        """
+        在画布上绘制实体
+
+        Listening
+        ---
+        DRAW : DrawEventBody
+            window : pygame.Surface
+                画布
+            camera : tuple[int, int]
+                镜头坐标（/负偏移量）
+        """
+        body: c.DrawEventBody = event.body
+        surface: pygame.Surface = body["window"]
+        offset: Tuple[int, int] = body["camera"]
+
+        if self.image is not None:
+            surface.blit(self.image, self.rect)
+        # if c.DEBUG and self.__class__.__name__ != "Tile":
+        #     RED = (255, 0, 0)
+        #     # rect
+        #     pygame.draw.rect(surface, RED, rect, width=1)
+        #     pygame.draw.line(surface, RED, rect.topleft, offset, width=1)
+        #     # font
+        #     text_rect: pygame.Rect = rect.copy()
+        #     text_rect.topleft = rect.bottomleft
+        #     text_surface = utils.debug_text(f"{self.rect.topleft+self.rect.size}")
+        #     surface.blit(text_surface, text_rect)
+        #
 
 
 class SceneManager(ListenerLike):

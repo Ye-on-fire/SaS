@@ -75,9 +75,7 @@ class MapGenerator(ListenerLike):
                     )
                     wall = Tile(self.core.add_event, image)
                     wall.tile_cord = (i, j)
-                    scene.add_listener(wall)
-                    scene.walls.append(wall)
-                    scene.layers[0].append(wall)
+                    scene.add_listener(wall, 0, True)
                 else:
                     image = pygame.image.load(
                         os.path.join(self.__path, "floors/", choice(self.__floors))
@@ -91,8 +89,7 @@ class MapGenerator(ListenerLike):
                     )
                     floor = Tile(self.core.add_event, image)
                     floor.tile_cord = (i, j)
-                    scene.add_listener(floor)
-                    scene.layers[0].append(floor)
+                    scene.add_listener(floor, 0)
         for i in range(self.obstacle_amount):
             image = pygame.image.load(
                 os.path.join(self.__path, "obstacles/", choice(self.__obstacles))
@@ -111,9 +108,7 @@ class MapGenerator(ListenerLike):
                 randint(60, scene.map_width - 60),
                 randint(60, scene.map_height - 60),
             )
-            scene.add_listener(obstacle)
-            scene.walls.append(obstacle)
-            scene.layers[1].append(obstacle)
+            scene.add_listener(obstacle, 1, True)
         for i in range(self.enemy_amount):
             enemy = choice(enemy_list).create_self(self.core.add_event)
             enemy.rect.move_ip(
@@ -121,14 +116,11 @@ class MapGenerator(ListenerLike):
                 randint(60, scene.map_height - 60),
             )
             enemy.target = self.player
-            scene.add_listener(enemy)
-            scene.layers[3].append(
-                enemy
-            )  # 说明地图在一层，障碍在二层，怪在三层，player在四层
+            scene.add_listener(enemy, 3)
+            # 说明地图在一层，障碍在二层，怪在三层，player在四层
         self.player.rect.centerx = scene.map_width // 2
         self.player.rect.centery = scene.map_height // 2
-        scene.add_listener(self.player)
-        scene.layers[4].append(self.player)
+        scene.add_listener(self.player, 4)
         scene.update_camera_by_chara(scene.player)
         return scene
 
@@ -141,7 +133,7 @@ class Home(SceneLike):
         listen_receivers: Optional[Set[str]] = None,
         post_api: Optional[PostEventApiLike] = None,
         mapsize=(3000, 2000),
-        name="",
+        name="home",
         player=None,
     ):
         super().__init__(
@@ -152,4 +144,6 @@ class Home(SceneLike):
             name=name,
             player=player,
         )
-        pass
+        self.load_tilemap("./maps/1.json")
+        self.add_listener(self.player, 3)
+        self.update_camera_by_chara(self.player)

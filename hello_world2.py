@@ -27,6 +27,9 @@ import pygame
 if __name__ == "__main__":
     co = Core()
     player = Player(post_api=co.add_event)
+    player.rect.move_ip(400, 300)
+    npc = FriendlyNpc(player, co.add_event)
+    npc.rect.move_ip(450, 380)
     mapgen = MapGenerator(
         width=50,
         height=40,
@@ -37,8 +40,13 @@ if __name__ == "__main__":
         enemy_amount=1,
         obstacle_amount=5,
     )
-    scene = mapgen.generate_random_battle_ground([Skeleton])
-    scenemanager = SceneManager(co.add_event, {"battleground": scene}, "battleground")
+    scene = Home(co, post_api=co.add_event, player=player)
+    # scene.add_listener(player, 3)
+    scene.add_listener(
+        npc,
+        3,
+    )
+    scenemanager = SceneManager(co.add_event, {"home": scene}, "home")
     resoucemanager = ResourceManager(co.add_event)
 
     while True:
