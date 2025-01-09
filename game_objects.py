@@ -47,6 +47,7 @@ class Player(AnimatedSprite):
         self.sp_recover_count_down_start = time.time()
         # 单位秒
         self.sp_recover_cooling_time = 1
+        self.sp_recover_speed = 0.7
         self.damage = 10
         self.attack_range = [150, 114]
         self.in_dialog = False
@@ -151,7 +152,7 @@ class Player(AnimatedSprite):
             >= self.sp_recover_cooling_time
         ):
             if self.sp < self.max_sp:
-                self.sp += 0.5
+                self.sp += self.sp_recover_speed
                 if self.sp > self.max_sp:
                     self.sp = self.max_sp
         if self.sp < 0:
@@ -253,14 +254,15 @@ class Enemy(AnimatedSprite):
     def take_damage(self, event):
         if self.rect.colliderect(event.body["rect"]):
             self.hp -= event.body["damage"]
-            print(self.hp)
-        if self.hp <= 0:
-            self.change_state(State.create_die())
-            self.post(
-                EventLike(c.ResourceCode.CHANGEMONEY, body={"money": self.money_drop})
-            )
-        else:
-            self.change_state(State.create_hit())
+            if self.hp <= 0:
+                self.change_state(State.create_die())
+                self.post(
+                    EventLike(
+                        c.ResourceCode.CHANGEMONEY, body={"money": self.money_drop}
+                    )
+                )
+            else:
+                self.change_state(State.create_hit())
 
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):
