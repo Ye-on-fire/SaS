@@ -147,7 +147,7 @@ class EntityLike(ListenerLike, pygame.sprite.Sprite):
 
 
 def generate_imageset(path):
-    if c.PLATFORM == "Darwin":
+    if c.PLATFORM.lower() == "mac":
         imageset = {}
         for i in os.listdir(path):
             temp = [[], []]
@@ -254,7 +254,7 @@ class State:
 
     @classmethod
     def create_roll(cls):
-        info = {"frame_type": [0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0], "can_move": True}
+        info = {"frame_type": [0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0], "can_move": True}
         return cls("roll", change_flag=False, loop_flag=False, duration=3, info=info)
 
     @classmethod

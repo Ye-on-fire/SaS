@@ -104,22 +104,50 @@ class MapGenerator(ListenerLike):
             obstacle = EntityLike(
                 image=image, rect=image.get_rect(), post_api=self.core.add_event
             )
-            obstacle.rect.move_ip(
-                randint(60, scene.map_width - 60),
-                randint(60, scene.map_height - 60),
+            # 不断尝试，直到生成一个不会和别的东西碰撞的坐标，不要有太多障碍，或者地图太小，可能会死循环
+            x = randint(
+                self.map_tile_width * self.scale + 1,
+                scene.map_height
+                - self.map_tile_width * self.scale
+                - obstacle.rect.width,
             )
+            y = randint(int(scene.map_height * 0.2), int(scene.map_height * 0.8))
+
+            obstacle.rect.move_ip(x, y)
+            while obstacle.rect.collidelist([wall.rect for wall in scene.walls]) != -1:
+                x = randint(
+                    self.map_tile_width * self.scale + 1,
+                    scene.map_height
+                    - self.map_tile_width * self.scale
+                    - obstacle.rect.width,
+                )
+                y = randint(int(scene.map_height * 0.2), int(scene.map_height * 0.8))
+                obstacle.rect.move_ip(x, y)
+
             scene.add_listener(obstacle, 1, True)
         for i in range(self.enemy_amount):
             enemy = choice(enemy_list).create_self(self.core.add_event)
-            enemy.rect.move_ip(
-                randint(60, scene.map_width - 60),
-                randint(60, scene.map_height - 60),
-            )
             enemy.target = self.player
+            x = randint(
+                self.map_tile_width * self.scale + 1,
+                scene.map_height - self.map_tile_width * self.scale - enemy.rect.width,
+            )
+            y = randint(int(scene.map_height * 0.2), int(scene.map_height * 0.8))
+
+            enemy.rect.move_ip(x, y)
+            while enemy.rect.collidelist([wall.rect for wall in scene.walls]) != -1:
+                x = randint(
+                    self.map_tile_width * self.scale + 1,
+                    scene.map_height
+                    - self.map_tile_width * self.scale
+                    - enemy.rect.width,
+                )
+                y = randint(int(scene.map_height * 0.2), int(scene.map_height * 0.8))
+                enemy.rect.move_ip(x, y)
             scene.add_listener(enemy, 3)
             # 说明地图在一层，障碍在二层，怪在三层，player在四层
         self.player.rect.centerx = scene.map_width // 2
-        self.player.rect.centery = scene.map_height // 2
+        self.player.rect.centery = scene.map_height - 120
         scene.add_listener(self.player, 4)
         scene.update_camera_by_chara(scene.player)
         return scene

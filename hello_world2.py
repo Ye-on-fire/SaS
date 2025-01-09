@@ -37,7 +37,7 @@ if __name__ == "__main__":
         path="./assets/mytiles/grassland/",
         core=co,
         player=player,
-        enemy_amount=1,
+        enemy_amount=5,
         obstacle_amount=5,
     )
     scene = Home(co, post_api=co.add_event, player=player)

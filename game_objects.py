@@ -39,7 +39,14 @@ class Player(AnimatedSprite):
         super().__init__(image=image, imageset=imageset, post_api=post_api)
         self.rect = pygame.Rect(0, 0, 63, 114)  # width 21*3 height 38*3
         self.rect.center = (500, 500)
-        self.hp = 200
+        self.max_hp = 200
+        self.hp = self.max_hp
+        self.max_sp = 100
+        self.sp = self.max_sp
+        # sp消耗后不会马上回复，有冷却
+        self.sp_recover_count_down_start = time.time()
+        # 单位秒
+        self.sp_recover_cooling_time = 1
         self.damage = 10
         self.attack_range = [150, 114]
         self.in_dialog = False
@@ -103,9 +110,17 @@ class Player(AnimatedSprite):
     def behavior(self, event):
         if not self.in_dialog:
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_j]:
+            if keys[pygame.K_j] and self.sp > 0 and self.state.name in ("run", "idle"):
+                self.sp -= 20
+                self.sp_recover_count_down_start = time.time()
                 self.change_state(State.create_attack())
-            elif keys[pygame.K_SPACE]:
+            elif (
+                keys[pygame.K_SPACE]
+                and self.sp > 0
+                and self.state.name in ("run", "idle")
+            ):
+                self.sp -= 10
+                self.sp_recover_count_down_start = time.time()
                 self.change_state(State.create_roll())
 
     @listening(c.BattleCode.ENEMYATTACK)
@@ -129,36 +144,18 @@ class Player(AnimatedSprite):
     def s_d(self, event):
         self.in_dialog = False
 
-    # @listening(c.EventCode.STEP)
-    # def step(self, event):
-    #     if "frame_type" in self.state.info.keys():
-    #         if self.state.info["frame_type"][self.current_frame] == 2:
-    #             print("invincible")
-    # if (
-    #     self.state.info["frame_type"][self.current_frame] == 1
-    #     and self.first_frame
-    # ):
-    #     self.first_frame = False
-    #     if self.faceing == 0:  # 设定攻击的范围
-    #         attack_rect = pygame.Rect(
-    #             self.rect.centerx,
-    #             self.rect.centery - self.rect.height // 2,
-    #             *self.attack_range,
-    #         )
-    #     else:
-    #         attack_rect = pygame.Rect(
-    #             self.rect.centerx - self.attack_range[0],
-    #             self.rect.centery - self.rect.height // 2,
-    #             *self.attack_range,
-    #         )
-    #     self.post(
-    #         EventLike(
-    #             c.BattleCode.PLAYERATTACK,
-    #             sender=self.uuid,
-    #             body={"rect": attack_rect, "damage": self.damage},
-    #         )
-    #     )
-    #
+    @listening(c.EventCode.STEP)
+    def step(self, event):
+        if (
+            time.time() - self.sp_recover_count_down_start
+            >= self.sp_recover_cooling_time
+        ):
+            if self.sp < self.max_sp:
+                self.sp += 0.5
+                if self.sp > self.max_sp:
+                    self.sp = self.max_sp
+        if self.sp < 0:
+            self.sp = 0
 
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):
@@ -194,6 +191,18 @@ class Player(AnimatedSprite):
                 self.rect.centery - self.rect.height // 2,
                 *self.attack_range,
             )
+        rect_max_hp_bar = pygame.rect.Rect(5, 5, self.max_hp * 2, 15)
+        rect_hp_bar = pygame.rect.Rect(
+            5, 5, self.max_hp * 2 * (self.hp / self.max_hp), 15
+        )
+        rect_max_sp_bar = pygame.rect.Rect(5, 25, self.max_sp * 1.5, 15)
+        rect_sp_bar = pygame.rect.Rect(
+            5, 25, self.max_sp * 1.5 * (self.sp / self.max_sp), 15
+        )
+        pygame.draw.rect(surface, (255, 0, 0), rect_max_hp_bar)
+        pygame.draw.rect(surface, (0, 255, 0), rect_hp_bar)
+        pygame.draw.rect(surface, (0, 0, 0), rect_max_sp_bar)
+        pygame.draw.rect(surface, (255, 255, 0), rect_sp_bar)
         if self.image is not None:
             surface.blit(self.image, real_rect)
         if c.DEBUG and self.__class__.__name__ != "Tile":
@@ -219,14 +228,15 @@ class Enemy(AnimatedSprite):
         direction=0,
         post_api=None,
         target: EntityLike = None,
-        hp=30,
+        max_hp=30,
         damage=10,
         money_drop=10,
     ):
         image = imageset["idle"][0][0]
         super().__init__(imageset, image, state, direction, post_api)
         self.target = target  # most case: Player
-        self.hp = hp
+        self.max_hp = max_hp
+        self.hp = max_hp
         self.damage = damage
         self.money_drop = money_drop
         self.found_target = False
@@ -277,6 +287,18 @@ class Enemy(AnimatedSprite):
                 -(self.image.get_width() - rect.width),
                 -(self.image.get_height() - rect.height),
             )
+        rect_red = rect.move(0, -10)
+        rect_red.height = 10
+        rect_light_green = rect.move(0, -10)
+        green_width = (self.hp / self.max_hp) * self.rect.width
+        rect_light_green.width = green_width
+        rect_light_green.height = 5
+        rect_dark_green = rect.move(0, -5)
+        rect_dark_green.width = green_width
+        rect_dark_green.height = 5
+        pygame.draw.rect(surface, "red", rect_red)
+        pygame.draw.rect(surface, (72, 219, 55), rect_dark_green)
+        pygame.draw.rect(surface, (131, 245, 118), rect_light_green)
         if self.image is not None:
             surface.blit(self.image, draw_rect)
         if c.DEBUG and self.__class__.__name__ != "Tile":
