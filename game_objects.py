@@ -1,4 +1,5 @@
 import collections
+from json import load
 from pydoc import plain
 from random import randint, choice
 import time
@@ -515,14 +516,21 @@ class FriendlyNpc(AnimatedSprite):
                 "Hello",
                 "我是你的指引者",
                 "你需要通关这个地牢",
-                "你需要我帮你做什么",
-            ]
+                "需要我帮你介绍这个游戏怎么玩吗? 1.介绍 2.谢谢，不用了",
+            ],
+            "tutorial": [
+                "游戏的目标是通关这10层地牢，地牢难度会逐渐增大",
+                "你有生命值，生命值降到0你就死了",
+                "你还有体力，攻击和翻滚都会消耗体力，所以时刻注意你的体力",
+                "每一层地牢需要你击败所有怪物才能进入下一层",
+                "怪物会掉落金币，金币可以在中间出现的休息站中升级",
+            ],
+            "farewell": ["祝你有愉快的一天"],
         }
         self.text_box = TextEntity(
-            pygame.Rect(640, 550, 1, 1),
+            pygame.Rect(250, 550, 1, 1),
             font=TextEntity.get_zh_font(font_size=30),
-            font_color=(255, 255, 255),
-            back_ground=(0, 0, 0, 50),
+            font_color=(0, 0, 0),
             dynamic_size=True,
         )
         self.target = target
@@ -530,6 +538,9 @@ class FriendlyNpc(AnimatedSprite):
         self.dialog_activated = False
         self.current_dialog = "welcome"
         self.current_dialog_index = 0
+        self.dialog_background = load_image_and_scale(
+            "./assets/dialog_box/box1.png", pygame.Rect(0, 0, 1000, 300)
+        )
 
     def listen(self, event: EventLike) -> None:
         super().listen(event)
@@ -581,12 +592,7 @@ class FriendlyNpc(AnimatedSprite):
                 EventLike(c.DialogEventCode.STOP_DIALOG, sender=self.uuid, body={})
             )
             return
-        if (
-            keys[pygame.K_e]
-            or keys[pygame.K_KP_ENTER]
-            or keys[pygame.K_SPACE]
-            and self.dialog_activated
-        ):
+        if keys[pygame.K_e] or keys[pygame.K_SPACE] and self.dialog_activated:
             if self.current_dialog_index + 1 >= len(
                 self.__dialogs[self.current_dialog]
             ):
@@ -606,3 +612,41 @@ class FriendlyNpc(AnimatedSprite):
                         body={},
                     )
                 )
+        if (
+            self.dialog_activated
+            and self.current_dialog == "welcome"
+            and self.current_dialog_index == 3
+        ):
+            if keys[pygame.K_1]:
+                self.current_dialog = "tutorial"
+            elif keys[pygame.K_2]:
+                self.current_dialog = "farewell"
+
+    @listening(c.EventCode.DRAW)
+    def draw(self, event: EventLike):
+        """
+        在画布上绘制实体
+
+        Listening
+        ---
+        DRAW : DrawEventBody
+            window : pygame.Surface
+                画布
+            camera : tuple[int, int]
+                镜头坐标（/负偏移量）
+        """
+        body: c.DrawEventBody = event.body
+        surface: pygame.Surface = body["window"]
+        offset: Tuple[int, int] = body["camera"]
+
+        rect = self.rect.move(*(-i for i in offset))
+        if self.image is not None:
+            surface.blit(self.image, rect)
+        if self.dialog_activated:
+            surface.blit(
+                self.dialog_background,
+                (
+                    surface.get_width() // 2 - self.dialog_background.get_width() // 2,
+                    surface.get_height() - self.dialog_background.get_height(),
+                ),
+            )
