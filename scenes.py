@@ -60,7 +60,7 @@ class MapGenerator(ListenerLike):
         self.width = 30 + new_level * 2
         self.height = 20 + new_level * 2
         self.obstacle_amount = int(new_level * 0.6)
-        self.enemy_amount = 1 + int(new_level * 1.2)
+        self.enemy_amount = 1 + int(new_level * 0.8)
 
     def generate_random_battle_ground(self, enemy_list: list):
         scene = SceneLike(
@@ -289,6 +289,11 @@ class MapGenerator(ListenerLike):
         door.rect.centerx = scene.map_width // 2
         door.rect.top = self.map_tile_height
         scene.add_listener(door, 2)
+        if self.level % 3 == 0:
+            bonfire = BonfireDoor(self.post_api)
+            bonfire.rect.centerx = scene.map_width * 0.7
+            bonfire.rect.top = self.map_tile_height
+            scene.add_listener(bonfire, 2)
         return scene
 
 
@@ -316,8 +321,11 @@ class Home(SceneLike):
         self.npc.rect.move_ip(100, 200)
         self.bonfire = Bonfire(self.post_api, self.player, resourcemanager)
         self.bonfire.rect.move_ip(500, 500)
+        self.healer = Healer(self.player, self.post_api)
+        self.healer.rect.move_ip(800, 400)
         self.add_listener(self.bonfire, 3)
         self.add_listener(self.npc, 3)
+        self.add_listener(self.healer, 3)
         self.add_listener(self.player, 4)
         self.update_camera_by_chara(self.player)
 
@@ -394,6 +402,38 @@ class Door(EntityLike):
             self.post(EventLike(c.SceneEventCode.NEW_LEVEL))
 
 
+class BonfireDoor(EntityLike):
+    def __init__(self, post_api=None, listen_receivers: Optional[Set[str]] = None):
+        self.closed_image = load_image_and_scale(
+            "./assets/mytiles/closed_bonfire.png", pygame.Rect(0, 0, 80, 100)
+        )
+        self.open_image = load_image_and_scale(
+            "./assets/mytiles/open_bonfire.png", pygame.Rect(0, 0, 80, 100)
+        )
+        rect = self.open_image.get_rect()
+        super().__init__(
+            rect,
+            image=self.closed_image,
+            post_api=post_api,
+            listen_receivers=listen_receivers,
+        )
+        self.opened = False
+
+    @listening(c.SceneEventCode.DOOR_OPEN)
+    def door_open(self, event):
+        self.image = self.open_image
+        self.opened = True
+
+    @listening(c.MoveEventCode.MOVEATTEMPT)
+    def judge_move(self, event):
+        if self.opened and event.body["original_pos"].move(
+            event.body["move_offset"]
+        ).colliderect(self.rect):
+            self.post(
+                EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "home"})
+            )
+
+
 class SceneManager(ListenerLike):
     # 用来管理场景和切换场景
     def __init__(
@@ -415,8 +455,6 @@ class SceneManager(ListenerLike):
     def change_scene(self, event):
         if event.body["scene_name"] in self.__scene_list.keys():
             self.current_scene = self.__scene_list[event.body["scene_name"]]
-            # self.current_scene.player.rect.x = event.body["playerpos"][0]
-            # self.current_scene.player.rect.y = event.body["playerpos"][1]
             self.current_scene.update_camera_by_chara(self.current_scene.player)
         else:
             print("no such scene")

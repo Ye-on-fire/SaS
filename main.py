@@ -29,23 +29,7 @@ class MainGame(ListenerLike):
         self.co = Core()
         self.enemy_list = [Skeleton]
         super().__init__(post_api=self.co.add_event)
-        self.player = Player(post_api=self.co.add_event)
-        self.mapgenerator = MapGenerator(scale=3, core=self.co, player=self.player)
-        self.resourcemanager = ResourceManager(self.co.add_event)
-        self.scenemanager = SceneManager(
-            self.co.add_event,
-            {
-                "home": Home(
-                    core=self.co,
-                    player=self.player,
-                    resourcemanager=self.resourcemanager,
-                ),
-                "mainmenu": MainMenu(self.co, player=self.player),
-                "gameover": GameOver(self.co, player=self.player),
-            },
-            "mainmenu",
-            self.mapgenerator,
-        )
+        self.reset()
 
     def reset(self):
         self.player = Player(post_api=self.co.add_event)
@@ -82,20 +66,20 @@ class MainGame(ListenerLike):
             ):
                 e = EventLike(c.MoveEventCode.PREMOVE, prior=100, body={})
                 self.co.add_event(e)
-            elif ckeys[pygame.K_o]:
-                self.co.add_event(
-                    EventLike(
-                        c.SceneEventCode.RESTART,
-                        body={
-                            "scene_name": "battleground",
-                            "pre_loaded_scene": self.mapgenerator.generate_random_battle_ground(
-                                self.enemy_list
-                            ),
-                        },
-                    )
-                )
-            elif ckeys[pygame.K_r]:
-                self.reset()
+            # elif ckeys[pygame.K_o]:
+            #     self.co.add_event(
+            #         EventLike(
+            #             c.SceneEventCode.RESTART,
+            #             body={
+            #                 "scene_name": "battleground",
+            #                 "pre_loaded_scene": self.mapgenerator.generate_random_battle_ground(
+            #                     self.enemy_list
+            #                 ),
+            #             },
+            #         )
+            #     )
+            # elif ckeys[pygame.K_r]:
+            #     self.reset()
             else:
                 e = EventLike(
                     c.StateEventCode.CHANGE_STATE,

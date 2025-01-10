@@ -1,4 +1,5 @@
 import collections
+from openai import OpenAI
 from json import load
 from pydoc import plain
 from random import randint, choice
@@ -40,7 +41,7 @@ class Player(AnimatedSprite):
         super().__init__(image=image, imageset=imageset, post_api=post_api)
         self.rect = pygame.Rect(0, 0, 63, 114)  # width 21*3 height 38*3
         self.rect.center = (500, 500)
-        self.max_hp = 10
+        self.max_hp = 100
         self.hp = self.max_hp
         self.max_sp = 100
         self.sp = self.max_sp
@@ -708,14 +709,14 @@ class Bonfire(FriendlyNpc):
     def __init__(self, post_api, target: Player, resourcemanager: ResourceManager):
         imageset = generate_imageset("./assets/bonfire/", 1)
         image = imageset["idle"][0][0]
-        state = State.create_idle()
+        state = State("idle", duration=5)
         direction = 0
         self.set_dialog(
             {
                 "welcome": [
                     "你好我是篝火$",
                     "有什么能帮你的$",
-                    "1.继续冒险 2.升级 3.AI Feature@",
+                    "1.继续冒险 2.升级@",
                 ],
                 "upgrade": [
                     "你想升级哪一项？1.血量(20金币) 2.体力(10金币) 3.攻击力(30金币)@"
@@ -780,7 +781,6 @@ class Bonfire(FriendlyNpc):
         if self.dialog_activated:
             if self.current_dialog == "welcome" and self.current_dialog_index == 2:
                 if keys[pygame.K_1]:
-                    self.post(EventLike(c.SceneEventCode.NEW_LEVEL))
                     self.post(
                         EventLike(
                             c.DialogEventCode.STOP_DIALOG,
@@ -789,6 +789,7 @@ class Bonfire(FriendlyNpc):
                             body={},
                         )
                     )
+                    self.post(EventLike(c.SceneEventCode.NEW_LEVEL))
                     return
                 elif keys[pygame.K_2]:
                     self.current_dialog = "upgrade"
@@ -824,3 +825,134 @@ class Bonfire(FriendlyNpc):
                         )
                         self.target.damage += 10
                         self.resourcemanager.money -= 30
+
+
+class Healer(AnimatedSprite):
+    def __init__(self, target: Player, post_api=None):
+        imageset = generate_imageset("./assets/healer/", 1)
+        image = imageset["idle"][0][0]
+        super().__init__(imageset, image, post_api=post_api, direction=1)
+        self.target = target
+        self.dialog_background = load_image_and_scale(
+            "./assets/dialog_box/box1.png", pygame.Rect(0, 0, 1000, 300)
+        )
+        self.prompt_box = TextEntity(
+            pygame.Rect(250, 550, 1, 1),
+            font=TextEntity.get_zh_font(font_size=25),
+            font_color=(0, 0, 0),
+            dynamic_size=True,
+        )
+        self.input_box = TextEntity(
+            pygame.Rect(250, 650, 1, 1),
+            font=TextEntity.get_zh_font(font_size=25),
+            font_color=(0, 0, 0),
+            dynamic_size=True,
+        )
+        self.input_text = ""
+
+        self.dialog_activated = False
+        self.client = OpenAI(
+            base_url="http://10.15.88.73:5031/v1",
+            api_key="ollama",  # required but ignored
+        )
+        self.messages: List[Dict] = [
+            {
+                "role": "system",
+                "content": """You are now a healer in a rpg game. 
+                            The player will require you to heal him. 
+                            When he needs a heal, he will tell you \"I need a heal\",or something contains \"need\" and \"heal\" exactly, you heal him.
+                            Then, blame him for his carelessness that he lost so much hp.
+                            When you heal the player.Your replies should be less than 20 words and exactly start with \"You are healed\".""",
+            }
+        ]
+
+    @listening(c.DialogEventCode.ACTIVATE_DIALOG)
+    def activate_dialog(self, event):
+        self.dialog_activated = True
+        self.prompt_box.set_text("I'm your healer.How can I help you?")
+
+    @listening(c.DialogEventCode.STOP_DIALOG)
+    def stop_dialog(self, event):
+        self.dialog_activated = False
+
+    @listening(pygame.KEYDOWN)
+    def on_keydown(self, event):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_e] and not self.dialog_activated:
+            if dist2(self.rect, self.target.rect) <= 10000:
+                self.post(
+                    EventLike(
+                        c.DialogEventCode.ACTIVATE_DIALOG,
+                        sender=self.uuid,
+                        receivers=set([self.uuid, self.target.uuid]),
+                        body={},
+                    )
+                )
+        if self.dialog_activated:
+            if keys[pygame.K_RETURN]:
+                self.messages.append({"role": "user", "content": self.input_text})
+                self.input_text = ""
+                response = self.client.chat.completions.create(
+                    model="llama3.2",
+                    messages=self.messages,  # a list of dictionary contains all chat dictionary
+                )
+                # 提取模型回复
+                assistant_reply = response.choices[0].message.content
+                if assistant_reply.startswith("You are healed"):
+                    self.target.hp = self.target.max_hp
+                self.prompt_box.set_text(assistant_reply)
+                self.messages.append({"role": "assistant", "content": assistant_reply})
+            elif keys[pygame.K_ESCAPE]:
+                self.post(
+                    EventLike(
+                        c.DialogEventCode.STOP_DIALOG,
+                        sender=self.uuid,
+                        receivers={self.uuid, self.target.uuid},
+                        body={},
+                    )
+                )
+            elif keys[pygame.K_BACKSPACE]:
+                self.input_text = self.input_text[:-1]
+                # self.input_box.set_text(self.input_text)
+            else:
+                self.input_text += event.unicode
+                # self.input_box.set_text(self.input_text)
+
+    @listening(c.EventCode.STEP)
+    def step(self, event):
+        self.input_box.set_text(">" + self.input_text + "|")
+
+    def listen(self, event: EventLike) -> None:
+        super().listen(event)
+        if self.dialog_activated:
+            self.input_box.listen(event)
+            self.prompt_box.listen(event)
+
+    @listening(c.EventCode.DRAW)
+    def draw(self, event: EventLike):
+        """
+        在画布上绘制实体
+
+        Listening
+        ---
+        DRAW : DrawEventBody
+            window : pygame.Surface
+                画布
+            camera : tuple[int, int]
+                镜头坐标（/负偏移量）
+        """
+        body: c.DrawEventBody = event.body
+        surface: pygame.Surface = body["window"]
+        offset: Tuple[int, int] = body["camera"]
+
+        rect = self.rect.move(*(-i for i in offset))
+        if self.image is not None:
+            surface.blit(self.image, rect)
+        if self.dialog_activated:
+            surface.blit(
+                self.dialog_background,
+                (
+                    surface.get_width() // 2 - self.dialog_background.get_width() // 2,
+                    surface.get_height() - self.dialog_background.get_height(),
+                ),
+            )

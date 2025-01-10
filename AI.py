@@ -8,13 +8,11 @@ client = OpenAI(
 )
 
 messages : List[Dict] = [
-    {"role": "system", "content": '你现在需要扮演我们游戏里的NPC角色，玩家初始有100点生命值，10点攻击值。n\
-     你的任务是给他升级。玩家将输入1或2，输入1时，增加玩家20点生命值；输入2时，增加玩家20点攻击值n\
-     然后你将对他进行相应的加成。玩家可以无限制次数加成n\
-     如果玩家想和你聊聊他探险中的见闻，请试着和他聊聊天，n\
-     在聊天过程中，你不要说疑问句。n\
-     聊天过程中请全程用中文。全用中文！n\
-     每次加成后请加上一句话，内容可以是鼓励玩家，也可以聊聊玩家探险过程中的见闻。每句话不要超过20个字。'}
+    {"role": "system", "content": '''You are now a healer in a rpg game. 
+                                    The player will require you to heal him. 
+                                    When he needs a heal, he will tell you \"I need a heal\",or something contains \"need\" and \"heal\" exactly, you heal him.
+                                    Then, blame him for his carelessness that he lost so much hp.
+                                    When you heal the player.Your replies should be less than 20 words and exactly start with \"You are healed\".'''}
 ]
 print('“勇敢的探险者，我这里有两个选项，一个是提升20点生命值，另一个是提升10点攻击力')
 print('如果想要提升攻击力，请输入1；如果想提升攻击力，请输入2.')     
