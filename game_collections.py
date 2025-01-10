@@ -388,7 +388,7 @@ class AnimatedSprite(EntityLike):
         if self.__anim_loop_count == 1 and not self.state.is_loop:
             self.state.can_be_changed = True
             self._on_loop_end()
-            self.change_state(State.create_idle())
+            # self.change_state(State.create_idle())
         if self.__anim_loop_count >= 999:
             self.__anim_loop_count = 0
         self.image = self.__current_anim[self.__direction][self.__frame]

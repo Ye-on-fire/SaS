@@ -40,7 +40,7 @@ class Player(AnimatedSprite):
         super().__init__(image=image, imageset=imageset, post_api=post_api)
         self.rect = pygame.Rect(0, 0, 63, 114)  # width 21*3 height 38*3
         self.rect.center = (500, 500)
-        self.max_hp = 200
+        self.max_hp = 10
         self.hp = self.max_hp
         self.max_sp = 100
         self.sp = self.max_sp
@@ -76,6 +76,15 @@ class Player(AnimatedSprite):
                         body={"rect": attack_rect, "damage": self.damage},
                     )
                 )
+
+    def _on_loop_end(self):
+        if self.state.name == "die":
+            print("dead")
+            self.post(
+                EventLike(
+                    c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "gameover"}
+                )
+            )
 
     @listening(c.MoveEventCode.PREMOVE)
     def try_move(self, event):
@@ -145,6 +154,8 @@ class Player(AnimatedSprite):
                 print(f"player_hp:{self.hp}")
             else:
                 print("hit invincible")
+        if self.hp <= 0:
+            self.change_state(State.create_die())
 
     @listening(c.DialogEventCode.ACTIVATE_DIALOG)
     def a_d(self, event):

@@ -288,7 +288,7 @@ class MapGenerator(ListenerLike):
         door = Door(self.post_api)
         door.rect.centerx = scene.map_width // 2
         door.rect.top = self.map_tile_height
-        scene.add_listener(door, 4)
+        scene.add_listener(door, 2)
         return scene
 
 
@@ -320,6 +320,48 @@ class Home(SceneLike):
         self.add_listener(self.npc, 3)
         self.add_listener(self.player, 4)
         self.update_camera_by_chara(self.player)
+
+
+class MainMenu(SceneLike):
+    def __init__(self, core, mapsize=(1280, 720), name="mainmenu", player=None):
+        super().__init__(
+            core, post_api=core.add_event, mapsize=mapsize, name=name, player=player
+        )
+        self.bg_image = load_image_and_scale(
+            "./assets/background/mainmenu.jpg", pygame.Rect(0, 0, 1280, 720)
+        )
+
+    @listening(c.EventCode.DRAW)
+    def draw(self, event):
+        surface = event.body["window"]
+        surface.blit(self.bg_image, (0, 0))
+
+    @listening(pygame.KEYDOWN)
+    def on_keydown(self, event):
+        self.post(EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "home"}))
+
+
+class GameOver(SceneLike):
+    def __init__(self, core, mapsize=(1280, 720), name="gameover", player=None):
+        super().__init__(
+            core, post_api=core.add_event, mapsize=mapsize, name=name, player=player
+        )
+        self.bg_image = load_image_and_scale(
+            "./assets/background/gameover.jpg", pygame.Rect(0, 0, 1280, 720)
+        )
+
+    @listening(c.EventCode.DRAW)
+    def draw(self, event):
+        surface = event.body["window"]
+        surface.blit(self.bg_image, (0, 0))
+
+    @listening(pygame.KEYDOWN)
+    def on_keydown(self, event):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:
+            self.post(EventLike(c.SceneEventCode.RESTART))
+        elif keys[pygame.K_ESCAPE]:
+            self.core.exit()
 
 
 class Door(EntityLike):
@@ -373,13 +415,13 @@ class SceneManager(ListenerLike):
     def change_scene(self, event):
         if event.body["scene_name"] in self.__scene_list.keys():
             self.current_scene = self.__scene_list[event.body["scene_name"]]
-            self.current_scene.player.rect.x = event.body["playerpos"][0]
-            self.current_scene.player.rect.y = event.body["playerpos"][1]
+            # self.current_scene.player.rect.x = event.body["playerpos"][0]
+            # self.current_scene.player.rect.y = event.body["playerpos"][1]
             self.current_scene.update_camera_by_chara(self.current_scene.player)
         else:
             print("no such scene")
 
-    @listening(c.SceneEventCode.RESTART)
+    @listening(c.EventCode.GAME_RESTART)
     def restart_scene(self, event):
         self.__scene_list[event.body["scene_name"]] = event.body["pre_loaded_scene"]
         # self.current_scene.update_camera_by_chara(self.current_scene.player)

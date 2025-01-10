@@ -39,9 +39,11 @@ class MainGame(ListenerLike):
                     core=self.co,
                     player=self.player,
                     resourcemanager=self.resourcemanager,
-                )
+                ),
+                "mainmenu": MainMenu(self.co, player=self.player),
+                "gameover": GameOver(self.co, player=self.player),
             },
-            "home",
+            "mainmenu",
             self.mapgenerator,
         )
 
@@ -56,9 +58,11 @@ class MainGame(ListenerLike):
                     core=self.co,
                     player=self.player,
                     resourcemanager=self.resourcemanager,
-                )
+                ),
+                "mainmenu": MainMenu(self.co, player=self.player),
+                "gameover": GameOver(self.co, player=self.player),
             },
-            "home",
+            "mainmenu",
             self.mapgenerator,
         )
 
