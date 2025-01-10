@@ -519,7 +519,7 @@ class FriendlyNpc(AnimatedSprite):
         super().__init__(imageset, image, state, direction, post_api)
         self.text_box = TextEntity(
             pygame.Rect(250, 550, 1, 1),
-            font=TextEntity.get_zh_font(font_size=25),
+            font=pygame.font.Font("./assets/fonts/FangSim.ttf", 25),
             font_color=(0, 0, 0),
             dynamic_size=True,
         )
@@ -838,13 +838,13 @@ class Healer(AnimatedSprite):
         )
         self.prompt_box = TextEntity(
             pygame.Rect(200, 550, 1, 1),
-            font=TextEntity.get_zh_font(font_size=25),
+            font=pygame.font.Font("./assets/fonts/FangSim.ttf", 25),
             font_color=(0, 0, 0),
             dynamic_size=True,
         )
         self.input_box = TextEntity(
             pygame.Rect(200, 650, 1, 1),
-            font=TextEntity.get_zh_font(font_size=25),
+            font=pygame.font.Font("./assets/fonts/FangSim.ttf", 25),
             font_color=(0, 0, 0),
             dynamic_size=True,
         )
