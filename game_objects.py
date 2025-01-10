@@ -518,6 +518,7 @@ class Skeleton(Enemy):
 
     def _on_frame_begin(self):
         if self.state.name == "attack":
+            print(self.current_frame)
             if self.state.info["frame_type"][self.current_frame] == 1:
                 self.post(
                     EventLike(
