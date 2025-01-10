@@ -517,16 +517,14 @@ class Skeleton(Enemy):
                         )
 
     def _on_frame_begin(self):
-        if (
-            "frame_type" in self.state.info.keys()
-            and self.state.info["frame_type"][self.current_frame] == 1
-        ):
-            self.post(
-                EventLike(
-                    c.BattleCode.ENEMYATTACK,
-                    body={"damage": self.damage, "attack_rect": self.attack_rect},
+        if self.state.name == "attack":
+            if self.state.info["frame_type"][self.current_frame] == 1:
+                self.post(
+                    EventLike(
+                        c.BattleCode.ENEMYATTACK,
+                        body={"damage": self.damage, "attack_rect": self.attack_rect},
+                    )
                 )
-            )
 
 
 class FriendlyNpc(AnimatedSprite):

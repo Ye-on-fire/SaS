@@ -346,7 +346,6 @@ class MainMenu(SceneLike):
 
     @listening(pygame.KEYDOWN)
     def on_keydown(self, event):
-        self.post(EventLike(c.ResourceCode.TOGGLE_SHOW_MONEY))
         self.post(EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "home"}))
 
 

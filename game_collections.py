@@ -926,17 +926,6 @@ class TextEntity(EntityLike):
 
         if self.image is not None:
             surface.blit(self.image, self.rect)
-        # if c.DEBUG and self.__class__.__name__ != "Tile":
-        #     RED = (255, 0, 0)
-        #     # rect
-        #     pygame.draw.rect(surface, RED, rect, width=1)
-        #     pygame.draw.line(surface, RED, rect.topleft, offset, width=1)
-        #     # font
-        #     text_rect: pygame.Rect = rect.copy()
-        #     text_rect.topleft = rect.bottomleft
-        #     text_surface = utils.debug_text(f"{self.rect.topleft+self.rect.size}")
-        #     surface.blit(text_surface, text_rect)
-        #
 
 
 class ResourceManager(ListenerLike):

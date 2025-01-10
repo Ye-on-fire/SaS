@@ -68,20 +68,6 @@ class MainGame(ListenerLike):
             ):
                 e = EventLike(c.MoveEventCode.PREMOVE, prior=100, body={})
                 self.co.add_event(e)
-            # elif ckeys[pygame.K_o]:
-            #     self.co.add_event(
-            #         EventLike(
-            #             c.SceneEventCode.RESTART,
-            #             body={
-            #                 "scene_name": "battleground",
-            #                 "pre_loaded_scene": self.mapgenerator.generate_random_battle_ground(
-            #                     self.enemy_list
-            #                 ),
-            #             },
-            #         )
-            #     )
-            # elif ckeys[pygame.K_r]:
-            #     self.reset()
             else:
                 e = EventLike(
                     c.StateEventCode.CHANGE_STATE,
