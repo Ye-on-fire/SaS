@@ -14,36 +14,19 @@ class MapGenerator(ListenerLike):
         self,
         *,
         listen_receivers: _typing.Optional[_typing.Set[str]] = None,
-        width,
-        height,
         map_tile_width=16,
         map_tile_height=16,
         scale,
-        path,
         core,
         player,
     ):
         super().__init__(post_api=core.add_event, listen_receivers=listen_receivers)
-        self.__path = path
         self.player = player
-        self.width = width
-        self.height = height
         self.map_tile_width = map_tile_width
         self.map_tile_height = map_tile_height
         self.core = core
-        self.__floors = os.listdir(os.path.join(path, "floors/"))
-        self.__walls = [[] for i in range(8)]
-        # wall有8种，分别是4个角上的和4个边上的topleft:0,topright:1,bottomleft:2,bottomright:3,left:4,top:5,right:6,bottom:7
-        self.__walls[0] = os.listdir(os.path.join(path, "walls/topleft/"))
-        self.__walls[1] = os.listdir(os.path.join(path, "walls/topright/"))
-        self.__walls[2] = os.listdir(os.path.join(path, "walls/bottomleft/"))
-        self.__walls[3] = os.listdir(os.path.join(path, "walls/bottomright/"))
-        self.__walls[4] = os.listdir(os.path.join(path, "walls/left/"))
-        self.__walls[5] = os.listdir(os.path.join(path, "walls/top/"))
-        self.__walls[6] = os.listdir(os.path.join(path, "walls/right/"))
-        self.__walls[7] = os.listdir(os.path.join(path, "walls/bottom/"))
-        self.__obstacles = os.listdir(os.path.join(path, "obstacles/"))
         self.scale = scale
+        self.__walls = [[] for i in range(8)]
         self.level = 1
 
     @property
@@ -317,7 +300,6 @@ class Home(SceneLike):
         core: Core,
         *,
         listen_receivers: Optional[Set[str]] = None,
-        post_api: Optional[PostEventApiLike] = None,
         mapsize=(3000, 2000),
         name="home",
         player=None,
@@ -325,13 +307,16 @@ class Home(SceneLike):
         super().__init__(
             core,
             listen_receivers=listen_receivers,
-            post_api=post_api,
+            post_api=core.add_event,
             mapsize=mapsize,
             name=name,
             player=player,
         )
         self.load_tilemap("./maps/1.json")
-        self.add_listener(self.player, 3)
+        self.npc = FriendlyNpc(self.player, self.post_api)
+        self.npc.rect.move_ip(300, 400)
+        self.add_listener(self.npc, 3)
+        self.add_listener(self.player, 4)
         self.update_camera_by_chara(self.player)
 
 
