@@ -32,9 +32,11 @@ class MainGame(ListenerLike):
         self.reset()
 
     def reset(self):
-        self.player = Player(post_api=self.co.add_event)
-        self.mapgenerator = MapGenerator(scale=3, core=self.co, player=self.player)
         self.resourcemanager = ResourceManager(self.co.add_event)
+        self.player = Player(
+            post_api=self.co.add_event, resourcemanager=self.resourcemanager
+        )
+        self.mapgenerator = MapGenerator(scale=3, core=self.co, player=self.player)
         self.scenemanager = SceneManager(
             self.co.add_event,
             {
@@ -90,8 +92,8 @@ class MainGame(ListenerLike):
                 self.co.add_event(e)
             self.co.add_event(EventLike.anim_step_event(self.co.tick()))
             for event in self.co.yield_events():
-                self.resourcemanager.listen(event)
                 self.scenemanager.listen(event)
+                self.resourcemanager.listen(event)
                 self.listen(event)
             self.co.flip()  # 更新屏幕缓冲区
             self.co.tick(60)

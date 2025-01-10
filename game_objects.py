@@ -35,7 +35,7 @@ class Player(AnimatedSprite):
     游戏角色类，包含对角色移动，动作，动画的控制
     """
 
-    def __init__(self, post_api):
+    def __init__(self, post_api, resourcemanager):
         imageset = generate_imageset("./assets/player/")
         image = imageset["idle"][0][0]
         super().__init__(image=image, imageset=imageset, post_api=post_api)
@@ -53,6 +53,16 @@ class Player(AnimatedSprite):
         self.damage = 100
         self.attack_range = [150, 114]
         self.in_dialog = False
+        self.moneyicon = load_image_and_scale(
+            "./assets/mytiles/soul.png", pygame.Rect(0, 0, 48, 48)
+        )
+        self.moneytextbox = TextEntity(
+            pygame.Rect(60, 650, 1, 1),
+            font=pygame.font.Font("./assets/fonts/FangSim.ttf", 48),
+            font_color=(255, 255, 0),
+            dynamic_size=True,
+        )
+        self.resourcemanager = resourcemanager
 
     def _on_frame_begin(self):
         if self.state.name == "attack":
@@ -78,9 +88,14 @@ class Player(AnimatedSprite):
                     )
                 )
 
+    def listen(self, event: EventLike) -> None:
+        super().listen(event)
+        self.moneytextbox.listen(event)
+
     def _on_loop_end(self):
         if self.state.name == "die":
             print("dead")
+            self.post(EventLike(c.ResourceCode.TOGGLE_SHOW_MONEY))
             self.post(
                 EventLike(
                     c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "gameover"}
@@ -178,6 +193,7 @@ class Player(AnimatedSprite):
                     self.sp = self.max_sp
         if self.sp < 0:
             self.sp = 0
+        self.moneytextbox.set_text(str(self.resourcemanager.money))
 
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):
@@ -225,6 +241,7 @@ class Player(AnimatedSprite):
         pygame.draw.rect(surface, (0, 255, 0), rect_hp_bar)
         pygame.draw.rect(surface, (0, 0, 0), rect_max_sp_bar)
         pygame.draw.rect(surface, (255, 255, 0), rect_sp_bar)
+        surface.blit(self.moneyicon, (10, 650))
         if self.image is not None:
             surface.blit(self.image, real_rect)
         if c.DEBUG and self.__class__.__name__ != "Tile":

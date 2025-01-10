@@ -943,8 +943,8 @@ class ResourceManager(ListenerLike):
     # 用来管理全局属性
     def __init__(self, post_api):
         super().__init__(post_api=post_api)
-        self.money = 200
-        self.level = 1
+        self.money = 0
+        self.show_money = False
 
     @listening(c.ResourceCode.CHANGEMONEY)
     def change_money(self, event):

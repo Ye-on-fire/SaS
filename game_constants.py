@@ -1,3 +1,4 @@
+from turtle import width
 import typing as _typing
 import pygame as _pygame
 from platform import system
@@ -83,6 +84,7 @@ class BattleCode(_IntEnum):
 
 class ResourceCode(_IntEnum):
     CHANGEMONEY = get_unused_event_code()
+    TOGGLE_SHOW_MONEY = get_unused_event_code()
 
 
 class TempTestCode(_IntEnum):
