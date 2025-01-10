@@ -36,6 +36,7 @@ class EventCode(_IntEnum):
     STEP = get_unused_event_code()  # 通知监听者已经过去了一个游戏刻
     DRAW = get_unused_event_code()  # 绘制事件
     KILL = get_unused_event_code()  # 删除监听者事件（从群组等中删除监听者）
+    GAME_RESTART = get_unused_event_code()
 
 
 # event body

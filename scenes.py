@@ -1,5 +1,3 @@
-from cmath import rect
-from struct import calcsize
 from game_collections import *
 import game_constants as c
 import typing as _typing
@@ -27,7 +25,7 @@ class MapGenerator(ListenerLike):
         self.core = core
         self.scale = scale
         self.__walls = [[] for i in range(8)]
-        self.level = 1
+        self.level = 0
 
     @property
     def path(self):
@@ -303,6 +301,7 @@ class Home(SceneLike):
         mapsize=(3000, 2000),
         name="home",
         player=None,
+        resourcemanager,
     ):
         super().__init__(
             core,
@@ -313,8 +312,11 @@ class Home(SceneLike):
             player=player,
         )
         self.load_tilemap("./maps/1.json")
-        self.npc = FriendlyNpc(self.player, self.post_api)
-        self.npc.rect.move_ip(300, 400)
+        self.npc = Tutor(self.player, self.post_api)
+        self.npc.rect.move_ip(100, 200)
+        self.bonfire = Bonfire(self.post_api, self.player, resourcemanager)
+        self.bonfire.rect.move_ip(500, 500)
+        self.add_listener(self.bonfire, 3)
         self.add_listener(self.npc, 3)
         self.add_listener(self.player, 4)
         self.update_camera_by_chara(self.player)

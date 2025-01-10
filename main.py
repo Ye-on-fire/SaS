@@ -24,29 +24,47 @@ from scenes import *
 import pygame
 
 
-class MainGame:
+class MainGame(ListenerLike):
     def __init__(self) -> None:
         self.co = Core()
+        self.enemy_list = [Skeleton]
+        super().__init__(post_api=self.co.add_event)
         self.player = Player(post_api=self.co.add_event)
         self.mapgenerator = MapGenerator(scale=3, core=self.co, player=self.player)
+        self.resourcemanager = ResourceManager(self.co.add_event)
         self.scenemanager = SceneManager(
             self.co.add_event,
-            {"home": Home(core=self.co, player=self.player)},
+            {
+                "home": Home(
+                    core=self.co,
+                    player=self.player,
+                    resourcemanager=self.resourcemanager,
+                )
+            },
             "home",
             self.mapgenerator,
         )
-        self.resourcemanager = ResourceManager(self.co.add_event)
 
     def reset(self):
         self.player = Player(post_api=self.co.add_event)
         self.mapgenerator = MapGenerator(scale=3, core=self.co, player=self.player)
+        self.resourcemanager = ResourceManager(self.co.add_event)
         self.scenemanager = SceneManager(
             self.co.add_event,
-            {"home": Home(core=self.co, player=self.player)},
+            {
+                "home": Home(
+                    core=self.co,
+                    player=self.player,
+                    resourcemanager=self.resourcemanager,
+                )
+            },
             "home",
             self.mapgenerator,
         )
-        self.resourcemanager = ResourceManager(self.co.add_event)
+
+    @listening(c.EventCode.GAME_RESTART)
+    def restart(self, event):
+        self.reset()
 
     def run(self):
         while True:
@@ -67,7 +85,7 @@ class MainGame:
                         body={
                             "scene_name": "battleground",
                             "pre_loaded_scene": self.mapgenerator.generate_random_battle_ground(
-                                [Skeleton]
+                                self.enemy_list
                             ),
                         },
                     )
@@ -86,6 +104,7 @@ class MainGame:
             for event in self.co.yield_events():
                 self.resourcemanager.listen(event)
                 self.scenemanager.listen(event)
+                self.listen(event)
             self.co.flip()  # 更新屏幕缓冲区
             self.co.tick(60)
 

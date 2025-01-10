@@ -502,34 +502,12 @@ class Skeleton(Enemy):
 
 class FriendlyNpc(AnimatedSprite):
     def __init__(
-        self,
-        target: Player,
-        post_api=None,
+        self, target: Player, imageset, image, state, direction, post_api=None
     ):
-        imageset = generate_imageset("./assets/friendly_npc/")
-        image = imageset["idle"][0][0]
-        state = State.create_idle()
-        direction = 0
         super().__init__(imageset, image, state, direction, post_api)
-        self.__dialogs = {
-            "welcome": [
-                "Hello",
-                "我是你的指引者",
-                "你需要通关这个地牢",
-                "需要我帮你介绍这个游戏怎么玩吗? 1.介绍 2.谢谢，不用了",
-            ],
-            "tutorial": [
-                "游戏的目标是通关这10层地牢，地牢难度会逐渐增大",
-                "你有生命值，生命值降到0你就死了",
-                "你还有体力，攻击和翻滚都会消耗体力，所以时刻注意你的体力",
-                "每一层地牢需要你击败所有怪物才能进入下一层",
-                "怪物会掉落金币，金币可以在中间出现的休息站中升级",
-            ],
-            "farewell": ["祝你有愉快的一天"],
-        }
         self.text_box = TextEntity(
             pygame.Rect(250, 550, 1, 1),
-            font=TextEntity.get_zh_font(font_size=30),
+            font=TextEntity.get_zh_font(font_size=25),
             font_color=(0, 0, 0),
             dynamic_size=True,
         )
@@ -548,6 +526,13 @@ class FriendlyNpc(AnimatedSprite):
             self.text_box.listen(event)
 
     @property
+    def dialogs(self):
+        return self.__dialogs
+
+    def set_dialog(self, new_dia):
+        self.__dialogs = new_dia
+
+    @property
     def current_dialog(self):
         return self.__current_dialog
 
@@ -562,10 +547,17 @@ class FriendlyNpc(AnimatedSprite):
 
     @current_dialog_index.setter
     def current_dialog_index(self, new_index):
-        max_len = len(self.__dialogs[self.__current_dialog])
+        max_len = len(self.dialogs[self.__current_dialog])
         self.__current_dialog_index = new_index % max_len
         self.text_box.set_text(
-            self.__dialogs[self.__current_dialog][self.__current_dialog_index]
+            self.dialogs[self.__current_dialog][self.__current_dialog_index][:-1]
+        )
+
+    def set_format_dialog(self, new_index, format_tuple):
+        self.__current_dialog_index = new_index
+        self.text_box.set_text(
+            self.dialogs[self.__current_dialog][self.__current_dialog_index][:-1]
+            % format_tuple
         )
 
     @listening(c.DialogEventCode.ACTIVATE_DIALOG)
@@ -576,51 +568,6 @@ class FriendlyNpc(AnimatedSprite):
     @listening(c.DialogEventCode.STOP_DIALOG)
     def stop_dialog(self, event):
         self.dialog_activated = False
-
-    @listening(c.EventCode.STEP)
-    def step(self, event):
-        if self.target.rect.x - self.rect.x >= 0:
-            self.faceing = 0
-        else:
-            self.faceing = 1
-
-    @listening(pygame.KEYDOWN)
-    def on_keydown(self, event):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_ESCAPE] and self.dialog_activated:
-            self.post(
-                EventLike(c.DialogEventCode.STOP_DIALOG, sender=self.uuid, body={})
-            )
-            return
-        if keys[pygame.K_e] or keys[pygame.K_SPACE] and self.dialog_activated:
-            if self.current_dialog_index + 1 >= len(
-                self.__dialogs[self.current_dialog]
-            ):
-                self.post(
-                    EventLike(c.DialogEventCode.STOP_DIALOG, sender=self.uuid, body={})
-                )
-            else:
-                self.current_dialog_index += 1
-        # 按e交互
-        if keys[pygame.K_e] and not self.dialog_activated:
-            if dist2(self.rect, self.target.rect) <= 10000:
-                self.post(
-                    EventLike(
-                        c.DialogEventCode.ACTIVATE_DIALOG,
-                        sender=self.uuid,
-                        receivers=set([self.uuid, self.target.uuid]),
-                        body={},
-                    )
-                )
-        if (
-            self.dialog_activated
-            and self.current_dialog == "welcome"
-            and self.current_dialog_index == 3
-        ):
-            if keys[pygame.K_1]:
-                self.current_dialog = "tutorial"
-            elif keys[pygame.K_2]:
-                self.current_dialog = "farewell"
 
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):
@@ -650,3 +597,219 @@ class FriendlyNpc(AnimatedSprite):
                     surface.get_height() - self.dialog_background.get_height(),
                 ),
             )
+
+
+class Tutor(FriendlyNpc):
+    def __init__(self, target: Player, post_api=None):
+        imageset = generate_imageset("./assets/friendly_npc/")
+        image = imageset["idle"][0][0]
+        state = State.create_idle()
+        direction = 0
+        self.set_dialog(
+            {
+                "welcome": [
+                    "Hello$",
+                    "我是你的指引者$",
+                    "你需要通关这个地牢$",
+                    "需要我帮你介绍这个游戏怎么玩吗? 1.介绍 2.谢谢，不用了@",
+                ],
+                "tutorial": [
+                    "游戏的目标是通关这10层地牢，地牢难度会逐渐增大$",
+                    "你有生命值，生命值降到0你就死了$",
+                    "你还有体力，攻击和翻滚都会消耗体力，所以时刻注意你的体力$",
+                    "每一层地牢需要你击败所有怪物才能进入下一层$",
+                    "怪物会掉落金币，金币可以在中间出现的休息站中升级$",
+                ],
+                "farewell": ["祝你有愉快的一天$"],
+            }
+        )
+        super().__init__(
+            target,
+            post_api=post_api,
+            imageset=imageset,
+            image=image,
+            state=state,
+            direction=direction,
+        )
+
+    @listening(c.EventCode.STEP)
+    def step(self, event):
+        if self.target.rect.x - self.rect.x >= 0:
+            self.faceing = 0
+        else:
+            self.faceing = 1
+
+    @listening(pygame.KEYDOWN)
+    def on_keydown(self, event):
+        # start==以下这一段是作为基础操作的，要用的时候复制
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE] and self.dialog_activated:
+            self.post(
+                EventLike(
+                    c.DialogEventCode.STOP_DIALOG,
+                    sender=self.uuid,
+                    receivers={self.uuid, self.target.uuid},
+                    body={},
+                )
+            )
+            return
+        if (
+            (keys[pygame.K_e] or keys[pygame.K_SPACE])
+            and self.dialog_activated
+            and self.dialogs[self.current_dialog][self.current_dialog_index][-1] != "@"
+        ):
+            if self.current_dialog_index + 1 >= len(self.dialogs[self.current_dialog]):
+                self.post(
+                    EventLike(
+                        c.DialogEventCode.STOP_DIALOG,
+                        sender=self.uuid,
+                        receivers={self.uuid, self.target.uuid},
+                        body={},
+                    )
+                )
+            else:
+                self.current_dialog_index += 1
+        # 按e交互
+        if keys[pygame.K_e] and not self.dialog_activated:
+            if dist2(self.rect, self.target.rect) <= 10000:
+                self.post(
+                    EventLike(
+                        c.DialogEventCode.ACTIVATE_DIALOG,
+                        sender=self.uuid,
+                        receivers=set([self.uuid, self.target.uuid]),
+                        body={},
+                    )
+                )
+        # end==
+        # 这里开始作为个性化内容
+        if (
+            self.dialog_activated
+            and self.current_dialog == "welcome"
+            and self.current_dialog_index == 3
+        ):
+            if keys[pygame.K_1]:
+                self.current_dialog = "tutorial"
+            elif keys[pygame.K_2]:
+                self.current_dialog = "farewell"
+
+
+class Bonfire(FriendlyNpc):
+    def __init__(self, post_api, target: Player, resourcemanager: ResourceManager):
+        imageset = generate_imageset("./assets/bonfire/", 1)
+        image = imageset["idle"][0][0]
+        state = State.create_idle()
+        direction = 0
+        self.set_dialog(
+            {
+                "welcome": [
+                    "你好我是篝火$",
+                    "有什么能帮你的$",
+                    "1.继续冒险 2.升级 3.AI Feature@",
+                ],
+                "upgrade": [
+                    "你想升级哪一项？1.血量(20金币) 2.体力(10金币) 3.攻击力(30金币)@"
+                ],
+                "upgrade1_success": ["升级成功，当前血量%d,升级后血量%d$"],
+                "upgrade2_success": ["升级成功，当前体力%d,升级后体力%d$"],
+                "upgrade3_success": ["升级成功，当前攻击%d,升级后攻击%d$"],
+                "upgrade_fail": ["升级失败，金币不足$"],
+            }
+        )
+        super().__init__(
+            target=target,
+            post_api=post_api,
+            imageset=imageset,
+            image=image,
+            state=state,
+            direction=direction,
+        )
+        self.resourcemanager = resourcemanager
+        # self.change_state(State.create_idle())
+
+    @listening(pygame.KEYDOWN)
+    def on_keydown2(self, event):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE] and self.dialog_activated:
+            self.post(
+                EventLike(
+                    c.DialogEventCode.STOP_DIALOG,
+                    sender=self.uuid,
+                    receivers={self.uuid, self.target.uuid},
+                    body={},
+                )
+            )
+            return
+        if (
+            (keys[pygame.K_e] or keys[pygame.K_SPACE])
+            and self.dialog_activated
+            and self.dialogs[self.current_dialog][self.current_dialog_index][-1] != "@"
+        ):
+            if self.current_dialog_index + 1 >= len(self.dialogs[self.current_dialog]):
+                self.post(
+                    EventLike(
+                        c.DialogEventCode.STOP_DIALOG,
+                        sender=self.uuid,
+                        receivers={self.uuid, self.target.uuid},
+                        body={},
+                    )
+                )
+            else:
+                self.current_dialog_index += 1
+        # 按e交互
+        if keys[pygame.K_e] and not self.dialog_activated:
+            if dist2(self.rect, self.target.rect) <= 10000:
+                self.post(
+                    EventLike(
+                        c.DialogEventCode.ACTIVATE_DIALOG,
+                        sender=self.uuid,
+                        receivers=set([self.uuid, self.target.uuid]),
+                        body={},
+                    )
+                )
+        if self.dialog_activated:
+            if self.current_dialog == "welcome" and self.current_dialog_index == 2:
+                if keys[pygame.K_1]:
+                    self.post(EventLike(c.SceneEventCode.NEW_LEVEL))
+                    self.post(
+                        EventLike(
+                            c.DialogEventCode.STOP_DIALOG,
+                            sender=self.uuid,
+                            receivers={self.uuid, self.target.uuid},
+                            body={},
+                        )
+                    )
+                    return
+                elif keys[pygame.K_2]:
+                    self.current_dialog = "upgrade"
+            elif self.current_dialog == "upgrade" and self.current_dialog_index == 0:
+                if keys[pygame.K_1]:
+                    if self.resourcemanager.money < 20:
+                        self.current_dialog = "upgrade_fail"
+                    else:
+                        self.current_dialog = "upgrade1_success"
+                        self.set_format_dialog(
+                            0, (self.target.max_hp, self.target.max_hp + 20)
+                        )
+                        self.target.max_hp += 20
+                        self.target.hp += 20
+                        self.resourcemanager.money -= 20
+                elif keys[pygame.K_2]:
+                    if self.resourcemanager.money < 10:
+                        self.current_dialog = "upgrade_fail"
+                    else:
+                        self.current_dialog = "upgrade2_success"
+                        self.set_format_dialog(
+                            0, (self.target.max_sp, self.target.max_sp + 10)
+                        )
+                        self.target.max_sp += 10
+                        self.resourcemanager.money -= 10
+                elif keys[pygame.K_3]:
+                    if self.resourcemanager.money < 30:
+                        self.current_dialog = "upgrade_fail"
+                    else:
+                        self.current_dialog = "upgrade3_success"
+                        self.set_format_dialog(
+                            0, (self.target.damage, self.target.damage + 10)
+                        )
+                        self.target.damage += 10
+                        self.resourcemanager.money -= 30

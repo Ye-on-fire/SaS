@@ -33,7 +33,7 @@ def l2norm(a: Union[_NumberLike, Iterable[_NumberLike]]) -> float:
 
 
 def dist2(rect1: pygame.Rect, rect2: pygame.Rect) -> float:
-    return (rect1.x - rect2.x) ** 2 + (rect1.y - rect2.y) ** 2
+    return (rect1.centerx - rect2.centerx) ** 2 + (rect1.centery - rect2.centery) ** 2
 
 
 def rint(number: float) -> int:

@@ -146,8 +146,8 @@ class EntityLike(ListenerLike, pygame.sprite.Sprite):
             surface.blit(text_surface, text_rect)
 
 
-def generate_imageset(path):
-    if c.PLATFORM.lower() == "mac":
+def generate_imageset(path, scale=3):
+    if c.PLATFORM.lower() != "mac":
         imageset = {}
         for i in os.listdir(path):
             temp = [[], []]
@@ -155,7 +155,7 @@ def generate_imageset(path):
                 image = pygame.image.load(os.path.join(path, i, j))
                 print(f"loaded{os.path.join(path, i, j)}")
                 image = pygame.transform.scale(
-                    image, (image.get_width() * 3, image.get_height() * 3)
+                    image, (image.get_width() * scale, image.get_height() * scale)
                 )
                 image_left = pygame.transform.flip(image, 1, 0)
                 temp[0].append(image)
@@ -171,7 +171,8 @@ def generate_imageset(path):
                         image = pygame.image.load(os.path.join(path, i, j))
                         print(f"loaded{os.path.join(path, i, j)}")
                         image = pygame.transform.scale(
-                            image, (image.get_width() * 3, image.get_height() * 3)
+                            image,
+                            (image.get_width() * scale, image.get_height() * scale),
                         )
                         image_left = pygame.transform.flip(image, 1, 0)
                         temp[0].append(image)
@@ -942,7 +943,7 @@ class ResourceManager(ListenerLike):
     # 用来管理全局属性
     def __init__(self, post_api):
         super().__init__(post_api=post_api)
-        self.money = 0
+        self.money = 200
         self.level = 1
 
     @listening(c.ResourceCode.CHANGEMONEY)
