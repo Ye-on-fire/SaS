@@ -837,13 +837,13 @@ class Healer(AnimatedSprite):
             "./assets/dialog_box/box1.png", pygame.Rect(0, 0, 1000, 300)
         )
         self.prompt_box = TextEntity(
-            pygame.Rect(250, 550, 1, 1),
+            pygame.Rect(200, 550, 1, 1),
             font=TextEntity.get_zh_font(font_size=25),
             font_color=(0, 0, 0),
             dynamic_size=True,
         )
         self.input_box = TextEntity(
-            pygame.Rect(250, 650, 1, 1),
+            pygame.Rect(200, 650, 1, 1),
             font=TextEntity.get_zh_font(font_size=25),
             font_color=(0, 0, 0),
             dynamic_size=True,
@@ -862,7 +862,7 @@ class Healer(AnimatedSprite):
                             The player will require you to heal him. 
                             When he needs a heal, he will tell you \"I need a heal\",or something contains \"need\" and \"heal\" exactly, you heal him.
                             Then, blame him for his carelessness that he lost so much hp.
-                            When you heal the player.Your replies should be less than 20 words and exactly start with \"You are healed\".""",
+                            When you heal the player.Your replies should be less than 15 words and you replies must exactly start with \"You are healed\".""",
             }
         ]
 
