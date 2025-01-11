@@ -95,7 +95,7 @@ class Player(AnimatedSprite):
 
     def _on_loop_end(self):
         if self.state.name == "die":
-            print("dead")
+            Core.play_music("./assets/bgm/die.ogg", loop=1)
             self.post(
                 EventLike(
                     c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "gameover"}
@@ -579,6 +579,7 @@ class Boss(Enemy):
 
     def _on_loop_end(self):
         if self.state.name == "die":
+            Core.play_music("./assets/bgm/victory.ogg", 1)
             self.post(
                 EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "victory"})
             )

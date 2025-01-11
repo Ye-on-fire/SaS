@@ -53,6 +53,7 @@ class MainGame(ListenerLike):
             "mainmenu",
             self.mapgenerator,
         )
+        self.co.play_music("./assets/bgm/title.mp3")
 
     @listening(c.EventCode.GAME_RESTART)
     def restart(self, event):

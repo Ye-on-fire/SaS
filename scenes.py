@@ -359,6 +359,7 @@ class MainMenu(SceneLike):
 
     @listening(pygame.KEYDOWN)
     def on_keydown(self, event):
+        Core.play_music("./assets/bgm/home.mp3")
         self.post(EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "home"}))
 
 
@@ -473,6 +474,7 @@ class BonfireDoor(EntityLike):
                     body={"pos": pygame.Rect(500, 500, 63, 114)},
                 )
             )
+            Core.play_music("./assets/bgm/home.mp3")
             self.post(
                 EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "home"})
             )
@@ -516,8 +518,10 @@ class SceneManager(ListenerLike):
             self.__scene_list["battleground"] = (
                 self.mapgenerator.generate_random_battle_ground([Skeleton])
             )
+            Core.play_music("./assets/bgm/battleground.mp3")
             self.current_scene = self.__scene_list["battleground"]
         else:
+            Core.play_music("./assets/bgm/boss.mp3")
             self.post(
                 EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "boss"})
             )

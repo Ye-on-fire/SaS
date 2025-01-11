@@ -37,11 +37,8 @@ class DialogEventCode(_IntEnum):
     STOP_DIALOG = get_unused_event_code()
 
 
-class SceneCode(_IntEnum):
-    START_MEUN = get_unused_event_code()
-    CITY = get_unused_event_code()
-    WILD = get_unused_event_code()
-    BOSS_SCENE = get_unused_event_code()
+class MusicEventCode(_IntEnum):
+    PLAY_MUSIC = get_unused_event_code()
 
 
 # event code | 事件代码
