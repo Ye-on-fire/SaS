@@ -718,20 +718,20 @@ class Boss(Enemy):
             self.summon()
             self.summoned = True
         if time.time() - self.last_attack_time >= self.attack_duration:
-            if self.target.rect.left > 936:
+            if self.target.rect.left > 1152:
                 self.attack1()
-            elif self.target.rect.right < 504:
+            elif self.target.rect.right < 288:
                 self.attack2()
             elif (
-                self.target.rect.top < 336
-                and self.target.rect.left >= 504
-                and self.target.rect.right <= 936
+                self.target.rect.top < 192
+                and self.target.rect.left >= 288
+                and self.target.rect.right <= 1152
             ):
                 self.attack4()
             elif (
-                self.target.rect.bottom > 624
-                and self.target.rect.left >= 504
-                and self.target.rect.right <= 936
+                self.target.rect.bottom > 768
+                and self.target.rect.left >= 288
+                and self.target.rect.right <= 1152
             ):
                 self.attack3()
             else:
