@@ -532,3 +532,4 @@ class SceneManager(ListenerLike):
             self.post(
                 EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "boss"})
             )
+            self.post(EventLike(c.BattleCode.SET_LAST_ATTACK))

@@ -9,7 +9,7 @@ from base.constants import *
 
 PLATFORM = system()
 
-DEBUG = True
+DEBUG = False
 RGBAOutput = _typing.Tuple[int, int, int, int]
 ColorValue = _typing.Union[
     _pygame.Color,
