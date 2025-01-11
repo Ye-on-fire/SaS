@@ -62,6 +62,9 @@ class MapGenerator(ListenerLike):
         self.height = 20 + new_level * 2
         self.obstacle_amount = int(new_level * 0.6)
         self.enemy_amount = 1 + int(new_level * 0.8)
+        self.enemy_damage = 10 + int(new_level * 1.5)
+        self.enemy_hp = 30 + int(new_level * 2)
+        self.enemy_moneydrop = 10 + int(new_level * 4)
 
     def generate_boss(self):
         self.path = "./assets/mytiles/dungeon/"
@@ -265,7 +268,12 @@ class MapGenerator(ListenerLike):
             scene.add_listener(obstacle, 1, True)
         print("scene:", scene.map_width, scene.map_height)
         for i in range(self.enemy_amount):
-            enemy = choice(enemy_list).create_self(self.core.add_event)
+            enemy = choice(enemy_list).create_self(
+                self.core.add_event,
+                self.enemy_hp,
+                self.enemy_damage,
+                randint(self.enemy_moneydrop - 5, self.enemy_moneydrop + 5),
+            )
             enemy.target = self.player
             x = randint(
                 self.map_tile_width * self.scale + 10,
@@ -518,7 +526,6 @@ class SceneManager(ListenerLike):
             self.__scene_list["battleground"] = (
                 self.mapgenerator.generate_random_battle_ground([Skeleton])
             )
-            Core.play_music("./assets/bgm/battleground.mp3")
             self.current_scene = self.__scene_list["battleground"]
         else:
             Core.play_music("./assets/bgm/boss.mp3")

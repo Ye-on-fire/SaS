@@ -43,14 +43,14 @@ class Player(AnimatedSprite):
         self.rect.center = (500, 500)
         self.max_hp = 100
         self.hp = self.max_hp
-        self.max_sp = 100
+        self.max_sp = 70
         self.sp = self.max_sp
         # sp消耗后不会马上回复，有冷却
         self.sp_recover_count_down_start = time.time()
         # 单位秒
         self.sp_recover_cooling_time = 1
         self.sp_recover_speed = 0.7
-        self.damage = 100
+        self.damage = 20
         self.attack_range = [150, 114]
         self.in_dialog = False
         self.moneyicon = load_image_and_scale(
@@ -285,8 +285,8 @@ class Enemy(AnimatedSprite):
             self.post(EventLike(c.EventCode.KILL, body={"suicide": self.uuid}))
 
     @classmethod
-    def create_self(cls, post_api):
-        return cls(post_api=post_api)
+    def create_self(cls, post_api, hp, damage, money_drop):
+        return cls(post_api=post_api, hp=hp, damage=damage, money_drop=money_drop)
 
     @listening(c.BattleCode.PLAYERATTACK)
     def take_damage(self, event):
@@ -888,7 +888,10 @@ class Tutor(FriendlyNpc):
                 "welcome": [
                     "Hello$",
                     "我是你的指引者$",
-                    "你需要通关这个地牢$",
+                    "这个地牢里有一个死灵法师$",
+                    "他一直在创造骷髅$",
+                    "给人们的生活带来了困扰$",
+                    "你的目标是打败他$",
                     "需要我帮你介绍这个游戏怎么玩吗? 1.介绍 2.谢谢，不用了@",
                 ],
                 "tutorial": [
@@ -963,7 +966,7 @@ class Tutor(FriendlyNpc):
         if (
             self.dialog_activated
             and self.current_dialog == "welcome"
-            and self.current_dialog_index == 3
+            and self.current_dialog_index == 6
         ):
             if keys[pygame.K_1]:
                 self.current_dialog = "tutorial"
@@ -985,7 +988,7 @@ class Bonfire(FriendlyNpc):
                     "1.继续冒险 2.升级@",
                 ],
                 "upgrade": [
-                    "你想升级哪一项？1.血量(20金币) 2.体力(10金币) 3.攻击力(30金币)@"
+                    "你想升级哪一项？1.血量(%d金币) 2.体力(%d金币) 3.攻击力(%d金币)@"
                 ],
                 "upgrade1_success": ["升级成功，当前血量%d,升级后血量%d$"],
                 "upgrade2_success": ["升级成功，当前体力%d,升级后体力%d$"],
@@ -1002,6 +1005,9 @@ class Bonfire(FriendlyNpc):
             direction=direction,
         )
         self.resourcemanager = resourcemanager
+        self.hp_money = 20
+        self.sp_money = 15
+        self.attack_money = 25
         # self.change_state(State.create_idle())
 
     @listening(pygame.KEYDOWN)
@@ -1055,13 +1061,27 @@ class Bonfire(FriendlyNpc):
                             body={},
                         )
                     )
+                    Core.play_music("./assets/bgm/battleground.mp3")
                     self.post(EventLike(c.SceneEventCode.NEW_LEVEL))
                     return
                 elif keys[pygame.K_2]:
                     self.current_dialog = "upgrade"
+                    self.set_format_dialog(
+                        0, (self.hp_money, self.sp_money, self.attack_money)
+                    )
+                # 作弊功能
+                elif keys[pygame.K_3]:
+                    self.target.max_hp = 100000
+                    self.target.hp = 100000
+                    self.target.max_sp = 100000
+                    self.target.sp = 100000
+                elif keys[pygame.K_4]:
+                    self.target.damage = 100000
+                elif keys[pygame.K_5]:
+                    self.resourcemanager.money = 100000
             elif self.current_dialog == "upgrade" and self.current_dialog_index == 0:
                 if keys[pygame.K_1]:
-                    if self.resourcemanager.money < 20:
+                    if self.resourcemanager.money < self.hp_money:
                         self.current_dialog = "upgrade_fail"
                     else:
                         self.current_dialog = "upgrade1_success"
@@ -1070,9 +1090,10 @@ class Bonfire(FriendlyNpc):
                         )
                         self.target.max_hp += 20
                         self.target.hp += 20
-                        self.resourcemanager.money -= 20
+                        self.resourcemanager.money -= self.hp_money
+                        self.hp_money += 30
                 elif keys[pygame.K_2]:
-                    if self.resourcemanager.money < 10:
+                    if self.resourcemanager.money < self.sp_money:
                         self.current_dialog = "upgrade_fail"
                     else:
                         self.current_dialog = "upgrade2_success"
@@ -1080,17 +1101,19 @@ class Bonfire(FriendlyNpc):
                             0, (self.target.max_sp, self.target.max_sp + 10)
                         )
                         self.target.max_sp += 10
-                        self.resourcemanager.money -= 10
+                        self.resourcemanager.money -= self.sp_money
+                        self.sp_money += 40
                 elif keys[pygame.K_3]:
-                    if self.resourcemanager.money < 30:
+                    if self.resourcemanager.money < self.attack_money:
                         self.current_dialog = "upgrade_fail"
                     else:
                         self.current_dialog = "upgrade3_success"
                         self.set_format_dialog(
                             0, (self.target.damage, self.target.damage + 10)
                         )
-                        self.target.damage += 10
-                        self.resourcemanager.money -= 30
+                        self.target.damage += 8
+                        self.resourcemanager.money -= self.attack_money
+                        self.attack_money += 40
 
 
 class Healer(AnimatedSprite):
