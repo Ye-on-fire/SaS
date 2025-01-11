@@ -25,13 +25,11 @@
             "id": "3f260303f5697d00",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "pdf",
               "state": {
-                "file": "Project_Report.md",
-                "mode": "source",
-                "source": false
+                "file": "Project_Report.pdf"
               },
-              "icon": "lucide-file",
+              "icon": "lucide-file-text",
               "title": "Project_Report"
             }
           },
@@ -194,16 +192,16 @@
   },
   "active": "3f260303f5697d00",
   "lastOpenFiles": [
+    "Project_Report.md",
     "Project_Report.pdf",
+    "README.md",
     "Project_Report_副本.md",
     "README_副本.md",
-    "README.md",
     "assets/bgm/victory.ogg",
     "assets/bgm/title.mp3",
     "assets/bgm/home.mp3",
     "assets/bgm/die.ogg",
     "assets/bgm/battleground.mp3",
-    "Project_Report.md",
     "game_collections.py",
     "assets/boss/hit/tile002.png",
     "assets/boss/hit/tile001.png",
@@ -220,7 +218,6 @@
     "().md",
     "biaotiti.md",
     "^.md",
-    "assets/projectile/idle",
-    "assets/projectile"
+    "assets/projectile/idle"
   ]
 }
