@@ -468,6 +468,12 @@ class BonfireDoor(EntityLike):
             event.body["move_offset"]
         ).colliderect(self.rect):
             self.post(
+                EventLike(
+                    c.MoveEventCode.MOVEALLOW,
+                    body={"pos": pygame.Rect(500, 500, 63, 114)},
+                )
+            )
+            self.post(
                 EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "home"})
             )
 
