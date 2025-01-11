@@ -147,7 +147,7 @@ class EntityLike(ListenerLike, pygame.sprite.Sprite):
 
 
 def generate_imageset(path, scale=3):
-    if c.PLATFORM.lower() != "mac":
+    if c.PLATFORM.lower() == "mac":
         imageset = {}
         for i in os.listdir(path):
             temp = [[], []]

@@ -565,7 +565,7 @@ class Boss(Enemy):
         direction=0,
         post_api=None,
         target: EntityLike = None,
-        hp=500,
+        hp=1000,
         damage=10,
         money_drop=10,
     ):
@@ -573,7 +573,7 @@ class Boss(Enemy):
             imageset, state, direction, post_api, target, hp, damage, money_drop
         )
         self.rect = pygame.Rect(720, 400, 56 * 2, 100 * 2)
-        self.attack_duration = 5
+        self.attack_duration = 3
         self.last_attack_time = time.time() - self.attack_duration + 2
         self.summoned = False
 

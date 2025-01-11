@@ -61,9 +61,9 @@ class MapGenerator(ListenerLike):
         self.width = 30 + new_level * 2
         self.height = 20 + new_level * 2
         self.obstacle_amount = int(new_level * 0.6)
-        self.enemy_amount = 1 + int(new_level * 0.8)
+        self.enemy_amount = 1 + int(new_level * 0.7)
         self.enemy_damage = 10 + int(new_level * 1.5)
-        self.enemy_hp = 30 + int(new_level * 2)
+        self.enemy_hp = 30 + int(new_level * 2.5)
         self.enemy_moneydrop = 10 + int(new_level * 4)
 
     def generate_boss(self):
@@ -521,7 +521,7 @@ class SceneManager(ListenerLike):
 
     @listening(c.SceneEventCode.NEW_LEVEL)
     def create_new_level(self, event):
-        if self.mapgenerator.level <= 10:
+        if self.mapgenerator.level <= 8:
             self.mapgenerator.level += 1
             self.__scene_list["battleground"] = (
                 self.mapgenerator.generate_random_battle_ground([Skeleton])
@@ -529,6 +529,12 @@ class SceneManager(ListenerLike):
             self.current_scene = self.__scene_list["battleground"]
         else:
             Core.play_music("./assets/bgm/boss.mp3")
+            self.post(
+                EventLike(
+                    c.MoveEventCode.MOVEALLOW,
+                    body={"pos": pygame.Rect(720, 700, 63, 144)},
+                )
+            )
             self.post(
                 EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "boss"})
             )
