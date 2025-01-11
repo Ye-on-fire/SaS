@@ -1,3 +1,4 @@
+from pydantic.types import T
 from game_collections import *
 import game_constants as c
 import typing as _typing
@@ -62,7 +63,18 @@ class MapGenerator(ListenerLike):
         self.obstacle_amount = int(new_level * 0.6)
         self.enemy_amount = 1 + int(new_level * 0.8)
 
-    def generate_random_battle_ground(self, enemy_list: list):
+    def generate_boss(self):
+        self.path = "./assets/mytiles/dungeon/"
+        self.width = 30
+        self.height = 20
+        self.obstacle_amount = 0
+        self.enemy_amount = 0
+        scene = self.generate_random_battle_ground([Skeleton], boss_flag=True)
+        boss = Boss(post_api=self.post_api, target=self.player)
+        scene.add_listener(boss, 3)
+        return scene
+
+    def generate_random_battle_ground(self, enemy_list: list, boss_flag=False):
         scene = SceneLike(
             self.core,
             mapsize=(
@@ -285,15 +297,16 @@ class MapGenerator(ListenerLike):
         self.player.rect.centery = scene.map_height - 120
         scene.add_listener(self.player, 4)
         scene.update_camera_by_chara(scene.player)
-        door = Door(self.post_api)
-        door.rect.centerx = scene.map_width // 2
-        door.rect.top = self.map_tile_height
-        scene.add_listener(door, 2)
-        if self.level % 3 == 0:
-            bonfire = BonfireDoor(self.post_api)
-            bonfire.rect.centerx = scene.map_width * 0.7
-            bonfire.rect.top = self.map_tile_height
-            scene.add_listener(bonfire, 2)
+        if not boss_flag:
+            door = Door(self.post_api)
+            door.rect.centerx = scene.map_width // 2
+            door.rect.top = self.map_tile_height
+            scene.add_listener(door, 2)
+            if self.level % 3 == 0:
+                bonfire = BonfireDoor(self.post_api)
+                bonfire.rect.centerx = scene.map_width * 0.7
+                bonfire.rect.top = self.map_tile_height
+                scene.add_listener(bonfire, 2)
         return scene
 
 
@@ -367,7 +380,32 @@ class GameOver(SceneLike):
     def on_keydown(self, event):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_r]:
-            self.post(EventLike(c.SceneEventCode.RESTART))
+            print("restart")
+            self.post(EventLike(c.EventCode.GAME_RESTART))
+        elif keys[pygame.K_ESCAPE]:
+            self.core.exit()
+
+
+class Victory(SceneLike):
+    def __init__(self, core, mapsize=(1280, 720), name="victory", player=None):
+        super().__init__(
+            core, post_api=core.add_event, mapsize=mapsize, name=name, player=player
+        )
+        self.bg_image = load_image_and_scale(
+            "./assets/background/victory.png", pygame.Rect(0, 0, 1280, 720)
+        )
+
+    @listening(c.EventCode.DRAW)
+    def draw(self, event):
+        surface = event.body["window"]
+        surface.blit(self.bg_image, (0, 0))
+
+    @listening(pygame.KEYDOWN)
+    def on_keydown(self, event):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_r]:
+            print("restart")
+            self.post(EventLike(c.EventCode.GAME_RESTART))
         elif keys[pygame.K_ESCAPE]:
             self.core.exit()
 
@@ -459,7 +497,7 @@ class SceneManager(ListenerLike):
         else:
             print("no such scene")
 
-    @listening(c.EventCode.GAME_RESTART)
+    @listening(c.SceneEventCode.RESTART)
     def restart_scene(self, event):
         self.__scene_list[event.body["scene_name"]] = event.body["pre_loaded_scene"]
         # self.current_scene.update_camera_by_chara(self.current_scene.player)
@@ -467,8 +505,13 @@ class SceneManager(ListenerLike):
 
     @listening(c.SceneEventCode.NEW_LEVEL)
     def create_new_level(self, event):
-        self.mapgenerator.level += 1
-        self.__scene_list["battleground"] = (
-            self.mapgenerator.generate_random_battle_ground([Skeleton])
-        )
-        self.current_scene = self.__scene_list["battleground"]
+        if self.mapgenerator.level <= 10:
+            self.mapgenerator.level += 1
+            self.__scene_list["battleground"] = (
+                self.mapgenerator.generate_random_battle_ground([Skeleton])
+            )
+            self.current_scene = self.__scene_list["battleground"]
+        else:
+            self.post(
+                EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "boss"})
+            )

@@ -345,9 +345,9 @@ class Enemy(AnimatedSprite):
             RED = (255, 0, 0)
             # rect
             pygame.draw.rect(surface, RED, rect, width=1)
-            pygame.draw.rect(
-                surface, "green", self.attack_rect.move(*(-i for i in offset)), width=1
-            )
+            # pygame.draw.rect(
+            #     surface, "green", self.attack_rect.move(*(-i for i in offset)), width=1
+            # )
             pygame.draw.circle(
                 surface,
                 "blue",
@@ -534,6 +534,7 @@ class Projectile(AnimatedSprite):
         image = imageset["idle"][0][0]
         super().__init__(imageset, image, State.create_idle(), 0, post_api)
         angle = math.atan2(end_pos[1] - start_pos[1], end_pos[0] - start_pos[0])
+        self.damage = 30
 
         self.velx = vel * math.cos(angle)
         self.vely = vel * math.sin(angle)
@@ -544,30 +545,236 @@ class Projectile(AnimatedSprite):
             EventLike(
                 c.CollisionEventCode.PROJECTILE_MOVE_ATTEMPT,
                 sender=self.uuid,
-                body={"rect": self.rect.move(self.velx, self.vely)},
+                body={
+                    "rect": self.rect.move(self.velx, self.vely),
+                    "damage": self.damage,
+                },
             )
         )
 
     @listening(c.CollisionEventCode.PROJECTILE_MOVE_ALLOW)
     def move_allow(self, event):
-        self.rect.move(event.body["rect"])
+        self.rect = event.body["rect"]
 
 
 class Boss(Enemy):
     def __init__(
         self,
-        imageset=generate_imageset("./assets/boss/"),
+        imageset=generate_imageset("./assets/boss/", 2),
         state: State = State.create_idle(),
         direction=0,
         post_api=None,
         target: EntityLike = None,
-        hp=30,
+        hp=500,
         damage=10,
         money_drop=10,
     ):
         super().__init__(
             imageset, state, direction, post_api, target, hp, damage, money_drop
         )
+        self.rect = pygame.Rect(720, 400, 56 * 2, 100 * 2)
+        self.attack_duration = 5
+        self.last_attack_time = time.time() - self.attack_duration + 2
+        self.summoned = False
+
+    def _on_loop_end(self):
+        if self.state.name == "die":
+            self.post(
+                EventLike(c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "victory"})
+            )
+
+    def attack1(self):
+        self.faceing = 0
+        self.rect.centerx = 100
+        self.rect.centery = 480
+        self.change_state(State.create_attack())
+        amount = 8
+        for i in range(amount):
+            prj = Projectile(
+                (120, 48 + 864 / (amount + 1) * i),
+                (121, 48 + 864 / (amount + 1) * i),
+                10,
+                self.post_api,
+            )
+            prj.rect.centerx = 120
+            prj.rect.centery = 48 + 864 / (amount + 1) * i
+            self.post(EventLike(c.SceneEventCode.ADD_LISTENER, body={"listener": prj}))
+
+    def attack2(self):
+        self.faceing = 1
+        self.rect.centerx = 1340
+        self.rect.centery = 480
+        self.change_state(State.create_attack())
+        amount = 8
+        for i in range(amount):
+            prj = Projectile(
+                (1320, 48 + 864 / (amount + 1) * i),
+                (1319, 48 + 864 / (amount + 1) * i),
+                10,
+                self.post_api,
+            )
+            prj.rect.centerx = 1320
+            prj.rect.centery = 48 + 864 / (amount + 1) * i
+            self.post(EventLike(c.SceneEventCode.ADD_LISTENER, body={"listener": prj}))
+
+    def attack3(self):
+        self.faceing = 0
+        self.rect.centerx = 720
+        self.rect.centery = 90
+        self.change_state(State.create_attack())
+        amount = 10
+        for i in range(amount):
+            prj = Projectile(
+                (48 + i * 1392 / (amount + 1), 100),
+                (48 + i * 1392 / (amount + 1), 101),
+                10,
+                self.post_api,
+            )
+            prj.rect.centerx = 48 + i * 1392 / (amount + 1)
+            prj.rect.centery = 100
+            self.post(EventLike(c.SceneEventCode.ADD_LISTENER, body={"listener": prj}))
+
+    def attack4(self):
+        self.faceing = 1
+        self.rect.centerx = 720
+        self.rect.centery = 830
+        self.change_state(State.create_attack())
+        amount = 10
+        for i in range(amount):
+            prj = Projectile(
+                (48 + i * 1392 / (amount + 1), 830),
+                (48 + i * 1392 / (amount + 1), 829),
+                10,
+                self.post_api,
+            )
+            prj.rect.centerx = 48 + i * 1392 / (amount + 1)
+            prj.rect.centery = 830
+            self.post(EventLike(c.SceneEventCode.ADD_LISTENER, body={"listener": prj}))
+
+    def attack5(self):
+        if self.rect.x - self.target.rect.x:
+            self.faceing = 1
+        else:
+            self.faceing = 0
+        self.rect.centerx = randint(400, 1000)
+        self.rect.centery = randint(300, 650)
+        self.change_state(State.create_attack())
+        amount = 4
+        offset = 300
+        for i in range(amount):
+            x = choice(
+                (
+                    randint(
+                        self.target.rect.left - offset, self.target.rect.left - 150
+                    ),
+                    randint(
+                        self.target.rect.right + 150, self.target.rect.right + offset
+                    ),
+                )
+            )
+            y = choice(
+                (
+                    randint(self.target.rect.top - offset, self.target.rect.top - 150),
+                    randint(
+                        self.target.rect.bottom + 150, self.target.rect.bottom + offset
+                    ),
+                )
+            )
+            prj = Projectile(
+                (x, y),
+                (self.target.rect.centerx, self.target.rect.centery),
+                6,
+                self.post_api,
+            )
+            prj.rect.centerx = x
+            prj.rect.centery = y
+            self.post(EventLike(c.SceneEventCode.ADD_LISTENER, body={"listener": prj}))
+
+    def summon(self):
+        self.change_state(State.create_attack())
+        for i in range(2):
+            skeleton = Skeleton(
+                post_api=self.post_api,
+                target=self.target,
+                hp=100,
+                damage=20,
+                money_drop=0,
+            )
+            skeleton.rect.x = choice((150, 1000))
+            skeleton.rect.y = choice((150, 800))
+            skeleton.found_target = True
+            self.post(
+                EventLike(c.SceneEventCode.ADD_LISTENER, body={"listener": skeleton})
+            )
+
+    @listening(c.BattleCode.SET_LAST_ATTACK)
+    def set_last_attack(self, event):
+        self.last_attack_time = time.time() - self.attack_duration + 2
+
+    @listening(c.EventCode.STEP)
+    def step(self, event):
+        if self.hp <= self.max_hp // 2 and not self.summoned:
+            self.summon()
+            self.summoned = True
+        if time.time() - self.last_attack_time >= self.attack_duration:
+            if self.target.rect.left > 936:
+                self.attack1()
+            elif self.target.rect.right < 504:
+                self.attack2()
+            elif (
+                self.target.rect.top < 336
+                and self.target.rect.left >= 504
+                and self.target.rect.right <= 936
+            ):
+                self.attack4()
+            elif (
+                self.target.rect.bottom > 624
+                and self.target.rect.left >= 504
+                and self.target.rect.right <= 936
+            ):
+                self.attack3()
+            else:
+                self.attack5()
+            self.last_attack_time = time.time()
+
+    @listening(c.EventCode.DRAW)
+    def draw(self, event: EventLike):
+        """
+        在画布上绘制实体
+
+        Listening
+        ---
+        DRAW : DrawEventBody
+            window : pygame.Surface
+                画布
+            camera : tuple[int, int]
+                镜头坐标（/负偏移量）
+        """
+        body: c.DrawEventBody = event.body
+        surface: pygame.Surface = body["window"]
+        offset: Tuple[int, int] = body["camera"]
+
+        rect = self.rect.move(*(-i for i in offset))
+        real_rect = rect.move(
+            -(self.image.get_width() - rect.width) / 2,
+            -(self.image.get_height() - rect.height) / 2,
+        )
+        rect_max_hp_bar = pygame.rect.Rect(220, 55, 800, 20)
+        rect_hp_bar = pygame.rect.Rect(220, 55, 800 * (self.hp / self.max_hp), 20)
+        pygame.draw.rect(surface, (255, 0, 0), rect_max_hp_bar)
+        pygame.draw.rect(surface, (0, 255, 0), rect_hp_bar)
+        pygame.draw.rect(surface, (255, 255, 255), rect_max_hp_bar, width=2)
+        if self.image is not None:
+            surface.blit(self.image, real_rect)
+        if c.DEBUG and self.__class__.__name__ != "Tile":
+            RED = (255, 0, 0)
+            # rect
+            pygame.draw.rect(surface, RED, rect, width=1)
+            # font
+            text_rect: pygame.Rect = rect.copy()
+            text_rect.topleft = rect.bottomleft
+            text_surface = utils.debug_text(f"{self.rect.topleft+self.rect.size}")
+            surface.blit(text_surface, text_rect)
 
 
 class FriendlyNpc(AnimatedSprite):

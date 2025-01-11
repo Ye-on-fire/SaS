@@ -47,6 +47,8 @@ class MainGame(ListenerLike):
                 ),
                 "mainmenu": MainMenu(self.co, player=self.player),
                 "gameover": GameOver(self.co, player=self.player),
+                "boss": self.mapgenerator.generate_boss(),
+                "victory": Victory(self.co, player=self.player),
             },
             "mainmenu",
             self.mapgenerator,
@@ -78,9 +80,9 @@ class MainGame(ListenerLike):
                 self.co.add_event(e)
             self.co.add_event(EventLike.anim_step_event(self.co.tick()))
             for event in self.co.yield_events():
+                self.listen(event)
                 self.scenemanager.listen(event)
                 self.resourcemanager.listen(event)
-                self.listen(event)
             self.co.flip()  # 更新屏幕缓冲区
             self.co.tick(60)
 

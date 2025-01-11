@@ -9,7 +9,7 @@ from base.constants import *
 
 PLATFORM = system()
 
-DEBUG = False
+DEBUG = True
 RGBAOutput = _typing.Tuple[int, int, int, int]
 ColorValue = _typing.Union[
     _pygame.Color,
@@ -83,6 +83,7 @@ class MoveEventCode(_IntEnum):
 class BattleCode(_IntEnum):
     PLAYERATTACK = get_unused_event_code()
     ENEMYATTACK = get_unused_event_code()
+    SET_LAST_ATTACK = get_unused_event_code()
 
 
 class ResourceCode(_IntEnum):

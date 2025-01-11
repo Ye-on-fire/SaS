@@ -1,11 +1,11 @@
 import json
 
 li = []
-li.append({"width": 31 * 16, "height": 21 * 16})
+li.append({"width": 41 * 16, "height": 31 * 16})
 a = {}
 a["name"] = "city2.png"
 a["type"] = "background"
-a["cord"] = [(i, j) for i in range(1, 30) for j in range(1, 20)]
+a["cord"] = [(i, j) for i in range(1, 40) for j in range(1, 30)]
 li.append(a)
 b = {}
 b["name"] = "city5.png"

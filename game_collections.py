@@ -342,9 +342,9 @@ class AnimatedSprite(EntityLike):
         return self.__frame
 
     def change_state(self, new_state):
-        if (
-            self.__current_state.can_be_changed and self.state != new_state
-        ) or new_state.high_priority:
+        if (self.__current_state.can_be_changed and self.state != new_state) or (
+            new_state.high_priority and not self.state.death_flag
+        ):
             self.state = new_state
             self.__frame = 0
             self.__frame_duration_count = 0
@@ -354,7 +354,7 @@ class AnimatedSprite(EntityLike):
     def change_state_by_event(self, event):
         if (
             self.__current_state.can_be_changed and self.state != event.body["state"]
-        ) or event.body["state"].high_priority:
+        ) or (event.body["state"].high_priority and not self.state.death_flag):
             self.state = event.body["state"]
             self.__frame = 0
             self.__frame_duration_count = 0
@@ -633,6 +633,10 @@ class SceneLike(GroupLike):
             return
         self.member_listen(event)
 
+    @listening(c.SceneEventCode.ADD_LISTENER)
+    def add_li(self, event):
+        self.add_listener(event.body["listener"], 3)
+
     @listening(c.MoveEventCode.MOVECAMERA)
     def move_camera(self, event):
         self.update_camera_by_chara(event.body["chara"])
@@ -725,6 +729,39 @@ class SceneLike(GroupLike):
                 c.CollisionEventCode.ENEMY_MOVE_ATTEMPT_WANDER_ALLOW,
                 receivers=set([event.sender]),
                 body={"can_move": True, "rect": event.body["rect"]},
+            )
+        )
+
+    @listening(c.CollisionEventCode.PROJECTILE_MOVE_ATTEMPT)
+    def judge_projectile(self, event):
+        if self.player.rect.colliderect(event.body["rect"]):
+            if not (
+                self.player.state.name == "roll"
+                and self.player.state.info["frame_type"][self.player.current_frame] == 2
+            ):
+                self.player.hp -= event.body["damage"]
+                self.post(EventLike(c.EventCode.KILL, body={"suicide": event.sender}))
+            else:
+                self.post(
+                    EventLike(
+                        c.CollisionEventCode.PROJECTILE_MOVE_ALLOW,
+                        receivers=set([event.sender]),
+                        body={"rect": event.body["rect"]},
+                    )
+                )
+
+            if self.player.hp <= 0:
+                self.player.change_state(State.create_die())
+            return
+        for wall in self.walls:
+            if wall.rect.colliderect(event.body["rect"]):
+                self.post(EventLike(c.EventCode.KILL, body={"suicide": event.sender}))
+                return
+        self.post(
+            EventLike(
+                c.CollisionEventCode.PROJECTILE_MOVE_ALLOW,
+                receivers=set([event.sender]),
+                body={"rect": event.body["rect"]},
             )
         )
 
