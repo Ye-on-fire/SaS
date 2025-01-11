@@ -66,6 +66,7 @@ class Player(AnimatedSprite):
 
     def _on_frame_begin(self):
         if self.state.name == "attack":
+            print("player attackframe: %d" % self.current_frame)
             if self.state.info["frame_type"][self.current_frame] == 1:
                 # self.first_frame = False
                 if self.faceing == 0:  # 设定攻击的范围
@@ -95,7 +96,6 @@ class Player(AnimatedSprite):
     def _on_loop_end(self):
         if self.state.name == "die":
             print("dead")
-            self.post(EventLike(c.ResourceCode.TOGGLE_SHOW_MONEY))
             self.post(
                 EventLike(
                     c.SceneEventCode.CHANGE_SCENE, body={"scene_name": "gameover"}
@@ -526,6 +526,48 @@ class Skeleton(Enemy):
                         body={"damage": self.damage, "attack_rect": self.attack_rect},
                     )
                 )
+
+
+class Projectile(AnimatedSprite):
+    def __init__(self, start_pos, end_pos, vel, post_api=None):
+        imageset = generate_imageset("./assets/projectile/")
+        image = imageset["idle"][0][0]
+        super().__init__(imageset, image, State.create_idle(), 0, post_api)
+        angle = math.atan2(end_pos[1] - start_pos[1], end_pos[0] - start_pos[0])
+
+        self.velx = vel * math.cos(angle)
+        self.vely = vel * math.sin(angle)
+
+    @listening(c.EventCode.STEP)
+    def step(self, event):
+        self.post(
+            EventLike(
+                c.CollisionEventCode.PROJECTILE_MOVE_ATTEMPT,
+                sender=self.uuid,
+                body={"rect": self.rect.move(self.velx, self.vely)},
+            )
+        )
+
+    @listening(c.CollisionEventCode.PROJECTILE_MOVE_ALLOW)
+    def move_allow(self, event):
+        self.rect.move(event.body["rect"])
+
+
+class Boss(Enemy):
+    def __init__(
+        self,
+        imageset=generate_imageset("./assets/boss/"),
+        state: State = State.create_idle(),
+        direction=0,
+        post_api=None,
+        target: EntityLike = None,
+        hp=30,
+        damage=10,
+        money_drop=10,
+    ):
+        super().__init__(
+            imageset, state, direction, post_api, target, hp, damage, money_drop
+        )
 
 
 class FriendlyNpc(AnimatedSprite):

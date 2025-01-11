@@ -53,6 +53,8 @@ class CollisionEventCode(_IntEnum):
     ENEMY_MOVE_ATTEMPT_WANDER = get_unused_event_code()
     ENEMY_MOVE_ALLOW = get_unused_event_code()
     ENEMY_MOVE_ATTEMPT_WANDER_ALLOW = get_unused_event_code()
+    PROJECTILE_MOVE_ATTEMPT = get_unused_event_code()
+    PROJECTILE_MOVE_ALLOW = get_unused_event_code()
     HAVE_VOLUME = (
         get_unused_event_code()
     )  # if a entiry listening this code, means that entity have collision volumn.
@@ -64,6 +66,7 @@ class SceneEventCode(_IntEnum):
     TELEPORT = get_unused_event_code()
     RESTART = get_unused_event_code()
     DOOR_OPEN = get_unused_event_code()
+    ADD_LISTENER = get_unused_event_code()
 
 
 class StateEventCode(_IntEnum):

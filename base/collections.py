@@ -609,7 +609,7 @@ class Core:
             return event.prior
 
         self.__winsize: _typing.Tuple[int, int] = (1280, 720)  # width, height
-        self.__title: str = "The Bizarre Adventure of the Pufferfish"
+        self.__title: str = "Dungeon Souls"
         self.__rate: float = 0
         self.__window: _pygame.Surface = _pygame.display.set_mode(
             self.winsize, _pygame.RESIZABLE
