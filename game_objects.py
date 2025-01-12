@@ -1,14 +1,10 @@
 import collections
 from openai import OpenAI
-from json import load
-from pydoc import plain
 from random import randint, choice
 import time
-from turtle import listen, width
 
 import math
 import pygame
-from loguru import logger
 
 import os
 from base.constants import EventCode

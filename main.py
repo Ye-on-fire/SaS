@@ -1,6 +1,4 @@
 import pygame
-from pygame.transform import scale
-
 from base.constants import EventCode
 import utils
 import game_constants as c

@@ -1,4 +1,3 @@
-from turtle import width
 import typing as _typing
 import pygame as _pygame
 from platform import system

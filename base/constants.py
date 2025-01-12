@@ -1,4 +1,3 @@
-from webbrowser import get
 import pygame as _pygame
 import typing as _typing
 from enum import IntEnum as _IntEnum
