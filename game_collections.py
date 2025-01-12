@@ -147,6 +147,10 @@ class EntityLike(ListenerLike, pygame.sprite.Sprite):
 
 
 def generate_imageset(path, scale=3):
+    """
+    生成动画集，包括左边和右边的
+    给AnimatedSprite使用
+    """
     if c.PLATFORM.lower() == "mac":
         imageset = {}
         for i in os.listdir(path):
@@ -229,7 +233,7 @@ class State:
         self.death_flag = death_flag
         self.high_priority = prior_flag
         self.info = info
-
+    #以下为快捷创建状态
     @classmethod
     def create_idle(cls):
         info = {"can_move": True}
@@ -293,7 +297,7 @@ class AnimatedSprite(EntityLike):
     默认为idle，图片为idle的第一帧
     关于创建动画：第一步，将动画图片重命名为01，02……放在角色该动作的文件夹下
     第二部，为该动画创建一个State类型
-    第三部，让角色加载该State即可应用动画
+    第三部，让角色加载该State即可应用动画(change_state)
     """
 
     def __init__(
@@ -374,6 +378,9 @@ class AnimatedSprite(EntityLike):
 
     @listening(c.EventCode.ANIMSTEP)
     def anim_step(self, event):
+        """
+        播放动画事件，每一帧都要广播
+        """
         if (
             self.__frame_duration_count % self.state.duration == 0
             and self.__frame_duration_count != 0
@@ -396,6 +403,9 @@ class AnimatedSprite(EntityLike):
 
 
 class Tile(EntityLike):
+    """
+    砖块类，拥有砖块坐标属性，可以通过自身长宽快速返回实际坐标
+    """
     def __init__(
         self,
         post_api,
@@ -440,6 +450,7 @@ class Tile(EntityLike):
 class SceneLike(GroupLike):
     """
     场景类, 主要提供相机坐标, 图层控制, 以及进入与退出
+    判断碰撞
 
     Attributes
     ----------
@@ -452,12 +463,6 @@ class SceneLike(GroupLike):
     layers : collections.defaultdict[int, List[ListenerLike]]
         图层。键为整数, 代表绘制顺序 (从小到大)
 
-    Methods
-    -------
-    into()
-        进入场景
-    leave()
-        离开场景
     """
 
     # attributes
@@ -557,6 +562,9 @@ class SceneLike(GroupLike):
         self.update_camera_by_chara(new_player)
 
     def update_camera_by_chara(self, chara: EntityLike):
+        """
+        通过某个角色更新摄像机
+        """
         self.camera_cord = (
             chara.rect.centerx - self.core.window.get_width() / 2,
             chara.rect.centery - self.core.window.get_height() / 2,
@@ -571,9 +579,10 @@ class SceneLike(GroupLike):
         if solid:
             self.walls.append(listener)
 
-    def load_tilemap(
-        self, config_file_path, scale=3
-    ):  # tilemap的数据都是以json格式储存的
+    def load_tilemap(self, config_file_path, scale=3):
+        """
+        加载地图json格式
+        """
         with open(config_file_path, "r") as f:
             config = f.read()
         config = json.loads(config)  # 读取json并转换为python数据
@@ -592,34 +601,6 @@ class SceneLike(GroupLike):
                     self.add_listener(tile, 0)
         print("load map complete")
 
-    def __enter__(self):
-        """
-        调用`self.into`, 提供给上下文管理器的接口
-        """
-        self.into()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """
-        调用`self.leave`, 提供给上下文管理器的接口
-        """
-        self.leave()
-        return False
-
-    def into(self) -> None:
-        """
-        进入场景, `self.is_activated`设置为`True`
-        """
-        self.is_activated = True
-        logger.info(f"Into {self.__class__}.")
-
-    def leave(self) -> None:
-        """
-        离开场景, `self.is_activated`设置为`False`
-        """
-        self.is_activated = False
-        logger.info(f"Leave {self.__class__}.")
-
     def listen(self, event: EventLike):
         """
         场景本体处理事件, 场景内成员 (`self.listeners`) 处理事件 (除了DRAW事件) 。
@@ -635,14 +616,23 @@ class SceneLike(GroupLike):
 
     @listening(c.SceneEventCode.ADD_LISTENER)
     def add_li(self, event):
+        """
+        场景通过广播的形式添加实体
+        """
         self.add_listener(event.body["listener"], 3)
 
     @listening(c.MoveEventCode.MOVECAMERA)
     def move_camera(self, event):
+        """
+        通过广播形式移动镜头
+        """
         self.update_camera_by_chara(event.body["chara"])
 
     @listening(c.MoveEventCode.MOVEATTEMPT)
     def judge_move(self, event):
+        """
+        检测player的碰撞，分为检测水平碰撞和检测竖直碰撞
+        """
         can_move_horizental = True  # 可垂直移动
         can_move_vertical = True  # 可水平移动
         new_rect = event.body["original_pos"].copy()
@@ -673,6 +663,9 @@ class SceneLike(GroupLike):
 
     @listening(c.CollisionEventCode.ENEMY_MOVE_ATTEMPT)
     def judge_enemy_move(self, event):
+        """
+        检测敌人的碰撞
+        """
         if (
             event.body["original_pos"]
             .move(event.body["move_offset"])
@@ -714,6 +707,9 @@ class SceneLike(GroupLike):
 
     @listening(c.CollisionEventCode.ENEMY_MOVE_ATTEMPT_WANDER)
     def judge_wander(self, event):
+        """
+        检测敌人游荡时的碰撞，撞到就让敌人换向
+        """
         for wall in self.walls:
             if wall.rect.colliderect(event.body["rect"]):
                 self.post(
@@ -734,6 +730,9 @@ class SceneLike(GroupLike):
 
     @listening(c.CollisionEventCode.PROJECTILE_MOVE_ATTEMPT)
     def judge_projectile(self, event):
+        """
+        检测投射物的碰撞，撞到player就减血，撞到墙就消失
+        """
         if self.player.rect.colliderect(event.body["rect"]):
             if not (
                 self.player.state.name == "roll"
@@ -767,6 +766,9 @@ class SceneLike(GroupLike):
 
     @listening(c.EventCode.STEP)
     def step(self, event):
+        """
+        ps:图层3为怪专用，如果图层3空了，那怪就没了，开门
+        """
         if len(self.layers[3]) == 0:
             self.post(EventLike(c.SceneEventCode.DOOR_OPEN))
 

@@ -9,6 +9,9 @@ from random import choice, randint
 
 
 class MapGenerator(ListenerLike):
+    """
+    地图生成器类，可以通过自身的属性生成地图
+    """
     def __init__(
         self,
         *,
@@ -30,6 +33,7 @@ class MapGenerator(ListenerLike):
 
     @property
     def path(self):
+        #设置path属性，自动把图像load了
         return self.__path
 
     @path.setter
@@ -67,6 +71,7 @@ class MapGenerator(ListenerLike):
         self.enemy_moneydrop = 10 + int(new_level * 4)
 
     def generate_boss(self):
+        #生成boss房间
         self.path = "./assets/mytiles/dungeon/"
         self.width = 30
         self.height = 20
@@ -78,6 +83,7 @@ class MapGenerator(ListenerLike):
         return scene
 
     def generate_random_battle_ground(self, enemy_list: list, boss_flag=False):
+        #生成随机地图
         scene = SceneLike(
             self.core,
             mapsize=(
@@ -319,6 +325,9 @@ class MapGenerator(ListenerLike):
 
 
 class Home(SceneLike):
+    """
+    休息室类
+    """
     def __init__(
         self,
         core: Core,
@@ -507,6 +516,7 @@ class SceneManager(ListenerLike):
 
     @listening(c.SceneEventCode.CHANGE_SCENE)
     def change_scene(self, event):
+        #改变场景
         if event.body["scene_name"] in self.__scene_list.keys():
             self.current_scene = self.__scene_list[event.body["scene_name"]]
             self.current_scene.update_camera_by_chara(self.current_scene.player)
@@ -521,6 +531,7 @@ class SceneManager(ListenerLike):
 
     @listening(c.SceneEventCode.NEW_LEVEL)
     def create_new_level(self, event):
+        #自动进入下一个场景
         if self.mapgenerator.level <= 8:
             self.mapgenerator.level += 1
             self.__scene_list["battleground"] = (

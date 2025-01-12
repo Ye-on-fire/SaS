@@ -33,6 +33,7 @@ from utils import dist2
 class Player(AnimatedSprite):
     """
     游戏角色类，包含对角色移动，动作，动画的控制
+    游戏角色的特殊绘制，和血条，金币数在屏幕上的绘制
     """
 
     def __init__(self, post_api, resourcemanager):
@@ -94,6 +95,7 @@ class Player(AnimatedSprite):
         self.moneytextbox.listen(event)
 
     def _on_loop_end(self):
+        #在死亡动画播完后，进入gameover场景
         if self.state.name == "die":
             Core.play_music("./assets/bgm/die.ogg", loop=1)
             self.post(
@@ -104,6 +106,9 @@ class Player(AnimatedSprite):
 
     @listening(c.MoveEventCode.PREMOVE)
     def try_move(self, event):
+        """
+        这里时检测按键，让player能连续移动
+        """
         if not self.in_dialog:
             state = State.create_run()
             self.change_state(state)
@@ -160,6 +165,7 @@ class Player(AnimatedSprite):
 
     @listening(c.BattleCode.ENEMYATTACK)
     def take_damage(self, event):
+        #收到伤害
         if self.rect.colliderect(event.body["attack_rect"]):
             if not (
                 "frame_type" in self.state.info.keys()
@@ -175,14 +181,17 @@ class Player(AnimatedSprite):
 
     @listening(c.DialogEventCode.ACTIVATE_DIALOG)
     def a_d(self, event):
+        #进入对话状态
         self.in_dialog = True
 
     @listening(c.DialogEventCode.STOP_DIALOG)
     def s_d(self, event):
+        #退出对话状态
         self.in_dialog = False
 
     @listening(c.EventCode.STEP)
     def step(self, event):
+        #每一次循环回复sp
         if (
             time.time() - self.sp_recover_count_down_start
             >= self.sp_recover_cooling_time
@@ -217,18 +226,7 @@ class Player(AnimatedSprite):
             -(self.image.get_width() - rect.width) / 2,
             -(self.image.get_height() - rect.height) / 2,
         )
-        if self.faceing == 0:
-            attack_rect = pygame.Rect(
-                self.rect.centerx,
-                self.rect.centery - self.rect.height // 2,
-                *self.attack_range,
-            )
-        else:
-            attack_rect = pygame.Rect(
-                self.rect.centerx - self.attack_range[0],
-                self.rect.centery - self.rect.height // 2,
-                *self.attack_range,
-            )
+        #画血条
         rect_max_hp_bar = pygame.rect.Rect(5, 5, self.max_hp * 2, 15)
         rect_hp_bar = pygame.rect.Rect(
             5, 5, self.max_hp * 2 * (self.hp / self.max_hp), 15
@@ -250,22 +248,12 @@ class Player(AnimatedSprite):
         surface.blit(self.moneyicon, (10, 650))
         if self.image is not None:
             surface.blit(self.image, real_rect)
-        if c.DEBUG and self.__class__.__name__ != "Tile":
-            RED = (255, 0, 0)
-            # rect
-            pygame.draw.rect(surface, RED, rect, width=1)
-            pygame.draw.rect(
-                surface, "green", attack_rect.move(*(-i for i in offset)), width=1
-            )
-            pygame.draw.line(surface, RED, rect.topleft, offset, width=1)
-            # font
-            text_rect: pygame.Rect = rect.copy()
-            text_rect.topleft = rect.bottomleft
-            text_surface = utils.debug_text(f"{self.rect.topleft+self.rect.size}")
-            surface.blit(text_surface, text_rect)
 
 
 class Enemy(AnimatedSprite):
+    """
+    敌人类，为所有敌人的基类，包含一些敌人所共有的方法和属性
+    """
     def __init__(
         self,
         imageset=generate_imageset("./assets/skeleton/"),
@@ -335,6 +323,7 @@ class Enemy(AnimatedSprite):
                 -(self.image.get_width() - rect.width),
                 -(self.image.get_height() - rect.height),
             )
+        #画血条
         rect_red = rect.move(0, -10)
         rect_red.height = 10
         rect_light_green = rect.move(0, -10)
@@ -367,6 +356,9 @@ class Enemy(AnimatedSprite):
 
 
 class Skeleton(Enemy):
+    """
+    骷髅兵类，包含骷髅的属性方法和ai
+    """
     def __init__(
         self,
         imageset=generate_imageset("./assets/skeleton/"),
@@ -533,6 +525,9 @@ class Skeleton(Enemy):
 
 
 class Projectile(AnimatedSprite):
+    """
+    投射物类，会被Boss所创建，可以向一个方向移动
+    """
     def __init__(self, start_pos, end_pos, vel, post_api=None):
         imageset = generate_imageset("./assets/projectile/")
         image = imageset["idle"][0][0]
@@ -562,6 +557,9 @@ class Projectile(AnimatedSprite):
 
 
 class Boss(Enemy):
+    """
+    Boss,有几种攻击方式，半血以下创建小骷髅
+    """
     def __init__(
         self,
         imageset=generate_imageset("./assets/boss/", 2),
@@ -696,6 +694,7 @@ class Boss(Enemy):
             self.post(EventLike(c.SceneEventCode.ADD_LISTENER, body={"listener": prj}))
 
     def summon(self):
+        #召唤骷髅
         self.change_state(State.create_attack())
         for i in range(2):
             skeleton = Skeleton(
@@ -714,10 +713,12 @@ class Boss(Enemy):
 
     @listening(c.BattleCode.SET_LAST_ATTACK)
     def set_last_attack(self, event):
+        #通过广播重置冷却
         self.last_attack_time = time.time() - self.attack_duration + 2
 
     @listening(c.EventCode.STEP)
     def step(self, event):
+        #ai
         if self.hp <= self.max_hp // 2 and not self.summoned:
             self.summon()
             self.summoned = True
@@ -783,6 +784,9 @@ class Boss(Enemy):
 
 
 class FriendlyNpc(AnimatedSprite):
+    """
+    友好npc的基类
+    """
     def __init__(
         self, target: Player, imageset, image, state, direction, post_api=None
     ):
@@ -887,6 +891,7 @@ class Tutor(FriendlyNpc):
         image = imageset["idle"][0][0]
         state = State.create_idle()
         direction = 0
+        #dialog中通过$或者@表示一句话或者选项
         self.set_dialog(
             {
                 "welcome": [
@@ -1121,6 +1126,9 @@ class Bonfire(FriendlyNpc):
 
 
 class Healer(AnimatedSprite):
+    """
+    医师类，包含一个大预言模型对话，可以输入内容
+    """
     def __init__(self, target: Player, post_api=None):
         imageset = generate_imageset("./assets/healer/", 1)
         image = imageset["idle"][0][0]
