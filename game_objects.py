@@ -296,18 +296,19 @@ class Enemy(AnimatedSprite):
 
     @listening(c.BattleCode.PLAYERATTACK)
     def take_damage(self, event):
-        if self.rect.colliderect(event.body["rect"]):
-            self.hp -= event.body["damage"]
-            if self.hp <= 0:
-                self.hp = 0
-                self.change_state(State.create_die())
-                self.post(
-                    EventLike(
-                        c.ResourceCode.CHANGEMONEY, body={"money": self.money_drop}
+        if not self.state.death_flag:
+            if self.rect.colliderect(event.body["rect"]):
+                self.hp -= event.body["damage"]
+                if self.hp <= 0:
+                    self.hp = 0
+                    self.change_state(State.create_die())
+                    self.post(
+                        EventLike(
+                            c.ResourceCode.CHANGEMONEY, body={"money": self.money_drop}
+                        )
                     )
-                )
-            else:
-                self.change_state(State.create_hit())
+                else:
+                    self.change_state(State.create_hit())
 
     @listening(c.EventCode.DRAW)
     def draw(self, event: EventLike):
