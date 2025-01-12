@@ -237,10 +237,12 @@ class Player(AnimatedSprite):
         rect_sp_bar = pygame.rect.Rect(
             5, 25, self.max_sp * 1.5 * (self.sp / self.max_sp), 15
         )
-        pygame.draw.rect(surface, (255, 0, 0), rect_max_hp_bar)
-        pygame.draw.rect(surface, (0, 255, 0), rect_hp_bar)
-        pygame.draw.rect(surface, (0, 0, 0), rect_max_sp_bar)
-        pygame.draw.rect(surface, (255, 255, 0), rect_sp_bar)
+        pygame.draw.rect(surface, (255, 0, 0), rect_max_hp_bar,border_radius=10)
+        pygame.draw.rect(surface, (0, 255, 0), rect_hp_bar,border_radius=10)
+        pygame.draw.rect(surface, (0, 0, 0), rect_max_sp_bar,border_radius=10)
+        pygame.draw.rect(surface, (255, 255, 0), rect_sp_bar,border_radius=10)
+        pygame.draw.rect(surface,(52, 67, 235),rect_max_hp_bar,width=1,border_radius=10)
+        pygame.draw.rect(surface,(52, 67, 235),rect_max_sp_bar,width=1,border_radius=10)
         surface.blit(self.moneyicon, (10, 650))
         if self.image is not None:
             surface.blit(self.image, real_rect)
@@ -293,6 +295,7 @@ class Enemy(AnimatedSprite):
         if self.rect.colliderect(event.body["rect"]):
             self.hp -= event.body["damage"]
             if self.hp <= 0:
+                self.hp = 0
                 self.change_state(State.create_die())
                 self.post(
                     EventLike(
@@ -332,13 +335,9 @@ class Enemy(AnimatedSprite):
         rect_light_green = rect.move(0, -10)
         green_width = (self.hp / self.max_hp) * self.rect.width
         rect_light_green.width = green_width
-        rect_light_green.height = 5
-        rect_dark_green = rect.move(0, -5)
-        rect_dark_green.width = green_width
-        rect_dark_green.height = 5
-        pygame.draw.rect(surface, "red", rect_red)
-        pygame.draw.rect(surface, (72, 219, 55), rect_dark_green)
-        pygame.draw.rect(surface, (131, 245, 118), rect_light_green)
+        rect_light_green.height = 10
+        pygame.draw.rect(surface, "red", rect_red,border_radius=5)
+        pygame.draw.rect(surface, (131, 245, 118), rect_light_green,border_radius=5)
         if self.image is not None:
             surface.blit(self.image, draw_rect)
         if c.DEBUG and self.__class__.__name__ != "Tile":
@@ -1091,7 +1090,7 @@ class Bonfire(FriendlyNpc):
                         self.target.max_hp += 20
                         self.target.hp += 20
                         self.resourcemanager.money -= self.hp_money
-                        self.hp_money += 30
+                        self.hp_money += 25
                 elif keys[pygame.K_2]:
                     if self.resourcemanager.money < self.sp_money:
                         self.current_dialog = "upgrade_fail"
@@ -1102,7 +1101,7 @@ class Bonfire(FriendlyNpc):
                         )
                         self.target.max_sp += 10
                         self.resourcemanager.money -= self.sp_money
-                        self.sp_money += 40
+                        self.sp_money += 30
                 elif keys[pygame.K_3]:
                     if self.resourcemanager.money < self.attack_money:
                         self.current_dialog = "upgrade_fail"
@@ -1113,7 +1112,7 @@ class Bonfire(FriendlyNpc):
                         )
                         self.target.damage += 8
                         self.resourcemanager.money -= self.attack_money
-                        self.attack_money += 40
+                        self.attack_money += 35
 
 
 class Healer(AnimatedSprite):

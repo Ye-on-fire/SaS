@@ -63,7 +63,7 @@ class MapGenerator(ListenerLike):
         self.obstacle_amount = int(new_level * 0.6)
         self.enemy_amount = 1 + int(new_level * 0.7)
         self.enemy_damage = 10 + int(new_level * 1.5)
-        self.enemy_hp = 30 + int(new_level * 2.5)
+        self.enemy_hp = 40 + int(new_level * 3)
         self.enemy_moneydrop = 10 + int(new_level * 4)
 
     def generate_boss(self):
