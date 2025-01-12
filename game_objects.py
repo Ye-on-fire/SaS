@@ -237,12 +237,16 @@ class Player(AnimatedSprite):
         rect_sp_bar = pygame.rect.Rect(
             5, 25, self.max_sp * 1.5 * (self.sp / self.max_sp), 15
         )
-        pygame.draw.rect(surface, (255, 0, 0), rect_max_hp_bar,border_radius=10)
-        pygame.draw.rect(surface, (0, 255, 0), rect_hp_bar,border_radius=10)
-        pygame.draw.rect(surface, (0, 0, 0), rect_max_sp_bar,border_radius=10)
-        pygame.draw.rect(surface, (255, 255, 0), rect_sp_bar,border_radius=10)
-        pygame.draw.rect(surface,(52, 67, 235),rect_max_hp_bar,width=1,border_radius=10)
-        pygame.draw.rect(surface,(52, 67, 235),rect_max_sp_bar,width=1,border_radius=10)
+        pygame.draw.rect(surface, (255, 0, 0), rect_max_hp_bar, border_radius=10)
+        pygame.draw.rect(surface, (0, 255, 0), rect_hp_bar, border_radius=10)
+        pygame.draw.rect(surface, (0, 0, 0), rect_max_sp_bar, border_radius=10)
+        pygame.draw.rect(surface, (255, 255, 0), rect_sp_bar, border_radius=10)
+        pygame.draw.rect(
+            surface, (52, 67, 235), rect_max_hp_bar, width=1, border_radius=10
+        )
+        pygame.draw.rect(
+            surface, (52, 67, 235), rect_max_sp_bar, width=1, border_radius=10
+        )
         surface.blit(self.moneyicon, (10, 650))
         if self.image is not None:
             surface.blit(self.image, real_rect)
@@ -336,8 +340,8 @@ class Enemy(AnimatedSprite):
         green_width = (self.hp / self.max_hp) * self.rect.width
         rect_light_green.width = green_width
         rect_light_green.height = 10
-        pygame.draw.rect(surface, "red", rect_red,border_radius=5)
-        pygame.draw.rect(surface, (131, 245, 118), rect_light_green,border_radius=5)
+        pygame.draw.rect(surface, "red", rect_red, border_radius=5)
+        pygame.draw.rect(surface, (131, 245, 118), rect_light_green, border_radius=5)
         if self.image is not None:
             surface.blit(self.image, draw_rect)
         if c.DEBUG and self.__class__.__name__ != "Tile":
@@ -1187,10 +1191,21 @@ class Healer(AnimatedSprite):
                 assistant_reply = response.choices[0].message.content
                 if "$heal$" in assistant_reply:
                     self.target.hp = self.target.max_hp
-                    assistant_reply = assistant_reply.replace("$heal$","You are healed")
+                    assistant_reply = assistant_reply.replace(
+                        "$heal$", "You are healed"
+                    )
                 self.prompt_box.set_text(assistant_reply)
                 self.messages.append({"role": "assistant", "content": assistant_reply})
             elif keys[pygame.K_ESCAPE]:
+                self.messages: List[Dict] = [
+                    {
+                        "role": "system",
+                        "content": """You are now a healer in a rpg game. 
+                                    The player will require you to heal him. 
+                                    When he needs a heal, he's request must contain word "need" and "heal".In this case,your anwser must be "$heal$" without any other words.
+                                    When his request doesn't contain "need" or "heal", normally reply to him in less than 15 words. The content can be blaming him for his carelessness to lose so much hp""",
+                    }
+                ]
                 self.post(
                     EventLike(
                         c.DialogEventCode.STOP_DIALOG,
