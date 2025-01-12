@@ -1149,9 +1149,8 @@ class Healer(AnimatedSprite):
                 "role": "system",
                 "content": """You are now a healer in a rpg game. 
                             The player will require you to heal him. 
-                            When he needs a heal, he will tell you \"I need a heal\",or something contains \"need\" and \"heal\" exactly, you heal him.
-                            Then, blame him for his carelessness that he lost so much hp.
-                            When you heal the player.Your replies should be less than 15 words and you replies must exactly start with \"You are healed\".""",
+                            When he needs a heal, he's request must contain word "need" and "heal".In this case,your anwser must be "$heal$" without any other words.
+                            When his request doesn't contain "need" or "heal", normally reply to him in less than 15 words. The content can be blaming him for his carelessness to lose so much hp""",
             }
         ]
 
@@ -1187,8 +1186,9 @@ class Healer(AnimatedSprite):
                 )
                 # 提取模型回复
                 assistant_reply = response.choices[0].message.content
-                if assistant_reply.startswith("You are healed"):
+                if "$heal$" in assistant_reply:
                     self.target.hp = self.target.max_hp
+                    assistant_reply = assistant_reply.replace("$heal$","You are healed")
                 self.prompt_box.set_text(assistant_reply)
                 self.messages.append({"role": "assistant", "content": assistant_reply})
             elif keys[pygame.K_ESCAPE]:
